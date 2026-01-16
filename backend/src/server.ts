@@ -6,6 +6,12 @@ import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import Redis from 'ioredis';
 
+// Middleware
+import { requestId, errorHandler, notFoundHandler } from './middleware/errorHandler';
+
+// Routes
+import authRoutes from './routes/auth.routes';
+
 // Load environment variables
 dotenv.config();
 
@@ -33,6 +39,9 @@ try {
 // ============================================================================
 // MIDDLEWARE
 // ============================================================================
+
+// Request ID generation (must be early)
+app.use(requestId);
 
 // Security headers
 app.use(helmet());
@@ -126,47 +135,44 @@ app.get('/health/redis', async (req: Request, res: Response) => {
 });
 
 // ============================================================================
-// 404 HANDLER
+// API ROUTES
 // ============================================================================
 
-app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-    path: req.path,
-    timestamp: new Date().toISOString(),
-  });
-});
+// Mount authentication routes
+app.use('/api/auth', authRoutes);
 
 // ============================================================================
-// ERROR HANDLER
+// ERROR HANDLING (must be after all routes)
 // ============================================================================
 
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('❌ Error:', err);
+// 404 handler for undefined routes
+app.use(notFoundHandler);
 
-  res.status(500).json({
-    success: false,
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined,
-    timestamp: new Date().toISOString(),
-  });
-});
+// Global error handler (must be last)
+app.use(errorHandler);
 
 // ============================================================================
 // SERVER STARTUP
 // ============================================================================
 
 const server = app.listen(PORT, () => {
-  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('🚀 SokoShamba API Server Started');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('\n┌─────────────────────────────────────────────────────┐');
+  console.log('│ 🚀 SokoShamba API Server Started                   │');
+  console.log('└─────────────────────────────────────────────────────┘');
   console.log(`📍 Server running on: http://localhost:${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🗄️  Database check: http://localhost:${PORT}/health/db`);
   console.log(`💾 Redis check: http://localhost:${PORT}/health/redis`);
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+  console.log('\n📋 Authentication Endpoints:');
+  console.log(`   POST   /api/auth/register`);
+  console.log(`   POST   /api/auth/login`);
+  console.log(`   POST   /api/auth/logout`);
+  console.log(`   POST   /api/auth/refresh`);
+  console.log(`   GET    /api/auth/me`);
+  console.log(`   POST   /api/auth/forgot-password`);
+  console.log(`   POST   /api/auth/reset-password`);
+  console.log('└─────────────────────────────────────────────────────┘\n');
 });
 
 // Graceful shutdown

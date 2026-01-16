@@ -124,27 +124,17 @@ export const changePasswordSchema = z.object({
 
 /**
  * Express middleware to validate request body against a Zod schema
- * 
- * @param schema - Zod schema to validate against
- * @returns Express middleware function
- * 
- * @example
- * router.post('/register', validate(registerSchema), registerController);
  */
 export function validate(schema: z.ZodSchema) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Parse and validate request body
       const validated = schema.parse(req.body);
-      
-      // Replace req.body with validated data (removes extra fields)
       req.body = validated;
-      
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        // Convert Zod errors to our ValidationError format
-        const fieldErrors = error.errors.map(err => ({
+        // FIX: Use error.issues not error.errors
+        const fieldErrors = error.issues.map(err => ({
           field: err.path.join('.'),
           message: err.message,
         }));
@@ -159,9 +149,6 @@ export function validate(schema: z.ZodSchema) {
 
 /**
  * Validate query parameters
- * 
- * @param schema - Zod schema for query params
- * @returns Express middleware function
  */
 export function validateQuery(schema: z.ZodSchema) {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -171,7 +158,8 @@ export function validateQuery(schema: z.ZodSchema) {
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const fieldErrors = error.errors.map(err => ({
+        // FIX: Use error.issues not error.errors
+        const fieldErrors = error.issues.map(err => ({
           field: err.path.join('.'),
           message: err.message,
         }));
@@ -185,9 +173,6 @@ export function validateQuery(schema: z.ZodSchema) {
 
 /**
  * Validate route parameters
- * 
- * @param schema - Zod schema for params
- * @returns Express middleware function
  */
 export function validateParams(schema: z.ZodSchema) {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -197,7 +182,8 @@ export function validateParams(schema: z.ZodSchema) {
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const fieldErrors = error.errors.map(err => ({
+        // FIX: Use error.issues not error.errors
+        const fieldErrors = error.issues.map(err => ({
           field: err.path.join('.'),
           message: err.message,
         }));
@@ -213,7 +199,6 @@ export function validateParams(schema: z.ZodSchema) {
 // TYPE EXPORTS (for TypeScript)
 // ============================================================================
 
-// Infer TypeScript types from schemas
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
