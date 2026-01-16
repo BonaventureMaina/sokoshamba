@@ -160,3 +160,52 @@ docker exec -it sokoshamba-redis redis-cli
 ## License
 
 UNLICENSED - Proprietary
+
+## Authentication Endpoints (Session 3)
+
+### Public Routes
+- `POST /api/auth/register` - Register new user (consumer/farmer)
+- `POST /api/auth/login` - Login with email/password
+- `POST /api/auth/refresh` - Refresh access token
+- `POST /api/auth/forgot-password` - Request password reset (stub)
+- `POST /api/auth/reset-password` - Reset password with token (stub)
+
+### Protected Routes (require JWT)
+- `POST /api/auth/logout` - Logout (client-side token deletion)
+- `GET /api/auth/me` - Get current user profile
+
+### Test New User
+```bash
+# Register
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "phone": "254712345678",
+    "password": "SecurePass123!",
+    "firstName": "Test",
+    "lastName": "User",
+    "role": "consumer"
+  }'
+
+# Login
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "password": "SecurePass123!"}'
+
+# Get profile (use token from login)
+curl -X GET http://localhost:3001/api/auth/me \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+## Project Status
+
+**Completed:**
+- ✅ Session 1: Brand Identity & Architecture
+- ✅ Session 2: Database Foundation (10 tables, 461 records)
+- ✅ Session 3: Authentication System (JWT, bcrypt, validation)
+
+**Next:**
+- ⏳ Session 4: User & Farmer Management
+- ⏳ Session 5: Product & Category System
+- ⏳ Session 6-19: See Project-Chat-Session-Breakdown.pdf
