@@ -2,6 +2,14 @@
 
 Farm-to-consumer marketplace connecting Kenyan farmers directly with urban consumers.
 
+## Project Status
+
+**Current Session:** 4 Complete (User & Farmer Management)  
+**Next Session:** 5 (Product & Category System)  
+**Progress:** 4/19 sessions (21%)  
+**API Endpoints:** 22 implemented  
+**Tests Passing:** 37/37
+
 ## Tech Stack
 
 - **Runtime:** Node.js 20.x + TypeScript
@@ -10,12 +18,15 @@ Farm-to-consumer marketplace connecting Kenyan farmers directly with urban consu
 - **ORM:** Prisma 6.x
 - **Cache:** Redis 7 (via Docker)
 - **Auth:** JWT + bcrypt
+- **File Storage:** Cloudinary
+- **File Upload:** Multer
 
 ## Prerequisites
 
 - Docker & Docker Compose
 - Node.js 20.x
 - npm
+- Cloudinary account (free tier)
 
 ## Quick Start
 
@@ -34,7 +45,19 @@ cd backend
 npm install
 ```
 
-### 3. Setup Database
+### 3. Configure Environment
+```bash
+# Copy example
+cp .env.example .env
+
+# Edit .env and add:
+# - DATABASE_URL (PostgreSQL connection)
+# - REDIS_URL (Redis connection)
+# - JWT_SECRET and JWT_REFRESH_SECRET (generate secure keys)
+# - CLOUDINARY credentials (from cloudinary.com dashboard)
+```
+
+### 4. Setup Database
 ```bash
 # Run migrations
 npm run db:migrate
@@ -43,7 +66,7 @@ npm run db:migrate
 npm run db:seed
 ```
 
-### 4. Start Development Server
+### 5. Start Development Server
 ```bash
 npm run dev
 ```
@@ -60,6 +83,10 @@ Server runs at: `http://localhost:3001`
 - `npm run db:studio` - Open Prisma Studio (database GUI)
 - `npm run db:setup` - Migrate + Seed (fresh setup)
 - `npm run db:reset` - Reset database and re-seed
+- `npm run test:cloudinary` - Test Cloudinary integration
+- `npm run test:user` - Test user endpoints
+- `npm run test:address` - Test address endpoints
+- `npm run test:farmer` - Test farmer endpoints
 
 ## Health Check Endpoints
 
@@ -67,53 +94,115 @@ Server runs at: `http://localhost:3001`
 - `GET /health/db` - Database connection + stats
 - `GET /health/redis` - Redis connection
 
+## API Endpoints
+
+### Authentication (7 endpoints)
+
+```
+POST   /api/auth/register          - Register new user
+POST   /api/auth/login             - Login with email/password
+POST   /api/auth/refresh           - Refresh access token
+POST   /api/auth/logout            - Logout (invalidate token)
+GET    /api/auth/me                - Get current user profile
+POST   /api/auth/forgot-password   - Request password reset (stub)
+POST   /api/auth/reset-password    - Reset password with token (stub)
+```
+
+### User Management (5 endpoints)
+
+```
+GET    /api/users/:id                   - Get user profile (public)
+PATCH  /api/users/:id                   - Update profile (auth + ownership)
+DELETE /api/users/:id                   - Delete account (auth + ownership)
+POST   /api/users/:id/profile-image     - Upload profile image
+DELETE /api/users/:id/profile-image     - Delete profile image
+```
+
+### Address Management (6 endpoints)
+
+```
+GET    /api/users/:userId/addresses     - List user addresses
+POST   /api/users/:userId/addresses     - Create address
+GET    /api/addresses/:id               - Get single address
+PATCH  /api/addresses/:id               - Update address
+DELETE /api/addresses/:id               - Delete address
+PATCH  /api/addresses/:id/set-default   - Set as default
+```
+
+### Farmer Management (5 endpoints)
+
+```
+GET    /api/farmers                     - List farmers (filters: county, verified, search)
+GET    /api/farmers/:id                 - Get farmer profile
+PATCH  /api/farmers/:id                 - Update profile (auth + farmer role)
+GET    /api/farmers/:id/products        - Get farmer's products
+GET    /api/farmers/:id/reviews         - Get farmer's reviews
+```
+
 ## Test Credentials
 
 **Admin:**
 - Email: `admin@sokoshamba.co.ke`
 - Password: `Admin@2024`
 
-**Farmer (any of 20):**
-- Email: `[firstname].[lastname][0-19]@farmer.co.ke`
+**Farmer (example from seed):**
+- Email: `john.kamau0@farmer.co.ke`
 - Password: `Farmer@2024`
-- Example: `john.kamau0@farmer.co.ke`
 
-**Consumer (any of 50):**
-- Email: `[firstname].[lastname][0-49]@gmail.com`
+**Consumer (example from seed):**
+- Email: `john.kamau0@gmail.com`
 - Password: `Consumer@2024`
+
+**Test Consumer (created in Session 3):**
+- Email: `test.consumer@sokoshamba.co.ke`
+- Password: `TestPass123!`
+
+**Test Farmer (created in Session 4):**
+- Email: `test.farmer.new@sokoshamba.co.ke`
+- Password: `FarmerTest123!`
 
 ## Database Schema
 
 10 tables:
-- `users` - All users (consumers, farmers, admins)
-- `farmer_profiles` - Extended farmer information
-- `categories` - Product categories
-- `products` - Farmer products
-- `addresses` - Delivery addresses
-- `orders` - Customer orders
-- `order_items` - Items in orders
-- `transactions` - Payment records
-- `reviews` - Product/farmer reviews
-- `notifications` - User notifications
+- `users` - All users (consumers, farmers, admins) - 76 records
+- `farmer_profiles` - Extended farmer information - 21 records
+- `categories` - Product categories - 5 records
+- `products` - Farmer products - 100 records
+- `addresses` - Delivery addresses - 50+ records
+- `orders` - Customer orders - 50 records
+- `order_items` - Items in orders - 131 records
+- `transactions` - Payment records - 50 records
+- `reviews` - Product/farmer reviews - 11 records
+- `notifications` - User notifications - 30 records
 
 ## Environment Variables
 
 See `.env.example` for all required variables.
 
+**Critical Variables:**
+```bash
+DATABASE_URL="postgresql://user:pass@localhost:5432/sokoshamba"
+REDIS_URL="redis://localhost:6379"
+JWT_SECRET="your-secret-min-32-chars"
+JWT_REFRESH_SECRET="your-refresh-secret-min-32-chars"
+CLOUDINARY_CLOUD_NAME="your-cloud-name"
+CLOUDINARY_API_KEY="your-api-key"
+CLOUDINARY_API_SECRET="your-api-secret"
+```
+
 ## Project Structure
 ```
 backend/
 ├── prisma/
-│   ├── schema.prisma       # Database schema
-│   ├── seed.ts            # Seed data script
+│   ├── schema.prisma       # Database schema (10 models)
+│   ├── seed.ts            # Seed data script (461 records)
 │   └── migrations/        # Database migrations
 ├── src/
-│   ├── config/            # Configuration files
-│   ├── controllers/       # Route controllers
-│   ├── middleware/        # Express middleware
+│   ├── config/            # Configuration (Cloudinary, etc.)
+│   ├── controllers/       # Route controllers (auth, user, farmer, address)
+│   ├── middleware/        # Express middleware (auth, upload, errors)
 │   ├── routes/            # API routes
-│   ├── services/          # Business logic
-│   ├── utils/             # Helper functions
+│   ├── utils/             # Helper functions (JWT, password, upload, validation)
 │   └── server.ts          # Express app entry point
 ├── .env                   # Environment variables (not in git)
 ├── .env.example           # Environment template
@@ -150,62 +239,68 @@ docker exec -it sokoshamba-postgres psql -U sokoshamba -d sokoshamba
 docker exec -it sokoshamba-redis redis-cli
 ```
 
-## Next Steps (Session 3)
+## Testing
 
-- [ ] JWT authentication system
-- [ ] User registration/login endpoints
-- [ ] Password reset flow
-- [ ] Protected routes middleware
+### Manual API Testing
 
-## License
-
-UNLICENSED - Proprietary
-
-## Authentication Endpoints (Session 3)
-
-### Public Routes
-- `POST /api/auth/register` - Register new user (consumer/farmer)
-- `POST /api/auth/login` - Login with email/password
-- `POST /api/auth/refresh` - Refresh access token
-- `POST /api/auth/forgot-password` - Request password reset (stub)
-- `POST /api/auth/reset-password` - Reset password with token (stub)
-
-### Protected Routes (require JWT)
-- `POST /api/auth/logout` - Logout (client-side token deletion)
-- `GET /api/auth/me` - Get current user profile
-
-### Test New User
+Use the provided test scripts:
 ```bash
-# Register
+npm run test:cloudinary  # Cloudinary integration (5 tests)
+npm run test:user        # User endpoints (6 tests)
+npm run test:address     # Address endpoints (9 tests)
+npm run test:farmer      # Farmer endpoints (9 tests)
+```
+
+All 29 tests should pass.
+
+### Example API Calls
+
+**Register:**
+```bash
 curl -X POST http://localhost:3001/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "test@example.com",
+    "email": "newuser@example.com",
     "phone": "254712345678",
     "password": "SecurePass123!",
     "firstName": "Test",
     "lastName": "User",
     "role": "consumer"
   }'
+```
 
-# Login
+**Login:**
+```bash
 curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email": "test@example.com", "password": "SecurePass123!"}'
+```
 
-# Get profile (use token from login)
+**Get Profile (with auth):**
+```bash
 curl -X GET http://localhost:3001/api/auth/me \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
-## Project Status
+## Next Steps (Session 5)
 
-**Completed:**
+- [ ] Product CRUD operations
+- [ ] Category management
+- [ ] Product search and filtering
+- [ ] Inventory management
+- [ ] Multiple image upload for products
+
+## Completed Sessions
+
 - ✅ Session 1: Brand Identity & Architecture
-- ✅ Session 2: Database Foundation (10 tables, 461 records)
-- ✅ Session 3: Authentication System (JWT, bcrypt, validation)
+- ✅ Session 2: Database Foundation
+- ✅ Session 3: Authentication System
+- ✅ Session 4: User & Farmer Management
 
-**Next:**
-- ⏳ Session 4: User & Farmer Management
-- ⏳ Session 5: Product & Category System
-- ⏳ Session 6-19: See Project-Chat-Session-Breakdown.pdf
+## License
+
+UNLICENSED - Proprietary
+
+## Support
+
+For questions or issues, contact the development team.
