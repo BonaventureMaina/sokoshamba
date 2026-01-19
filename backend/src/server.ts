@@ -11,6 +11,9 @@ import { requestId, errorHandler, notFoundHandler } from './middleware/errorHand
 
 // Routes
 import authRoutes from './routes/auth.routes';
+import userRoutes from './routes/user.routes';
+import addressRoutes from './routes/address.routes';
+import farmerRoutes from './routes/farmer.routes';
 
 // Load environment variables
 dotenv.config();
@@ -141,6 +144,15 @@ app.get('/health/redis', async (req: Request, res: Response) => {
 // Mount authentication routes
 app.use('/api/auth', authRoutes);
 
+// Mount user routes
+app.use('/api/users', userRoutes);
+
+// Mount address routes
+app.use('/api', addressRoutes);
+
+// Mount farmer routes
+app.use('/api/farmers', farmerRoutes);
+
 // ============================================================================
 // ERROR HANDLING (must be after all routes)
 // ============================================================================
@@ -159,8 +171,8 @@ const server = app.listen(PORT, () => {
   console.log('\n┌─────────────────────────────────────────────────────┐');
   console.log('│ 🚀 SokoShamba API Server Started                   │');
   console.log('└─────────────────────────────────────────────────────┘');
-  console.log(`📍 Server running on: http://localhost:${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌍 Server running on: http://localhost:${PORT}`);
+  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🗄️  Database check: http://localhost:${PORT}/health/db`);
   console.log(`💾 Redis check: http://localhost:${PORT}/health/redis`);
@@ -172,6 +184,25 @@ const server = app.listen(PORT, () => {
   console.log(`   GET    /api/auth/me`);
   console.log(`   POST   /api/auth/forgot-password`);
   console.log(`   POST   /api/auth/reset-password`);
+  console.log('\n👤 User Management Endpoints:');
+  console.log(`   GET    /api/users/:id`);
+  console.log(`   PATCH  /api/users/:id`);
+  console.log(`   DELETE /api/users/:id`);
+  console.log(`   POST   /api/users/:id/profile-image`);
+  console.log(`   DELETE /api/users/:id/profile-image`);
+  console.log('\n📍 Address Management Endpoints:');
+  console.log(`   GET    /api/users/:userId/addresses`);
+  console.log(`   POST   /api/users/:userId/addresses`);
+  console.log(`   GET    /api/addresses/:id`);
+  console.log(`   PATCH  /api/addresses/:id`);
+  console.log(`   DELETE /api/addresses/:id`);
+  console.log(`   PATCH  /api/addresses/:id/set-default`);
+  console.log('\n🌾 Farmer Management Endpoints:');
+  console.log(`   GET    /api/farmers`);
+  console.log(`   GET    /api/farmers/:id`);
+  console.log(`   PATCH  /api/farmers/:id`);
+  console.log(`   GET    /api/farmers/:id/products`);
+  console.log(`   GET    /api/farmers/:id/reviews`);
   console.log('└─────────────────────────────────────────────────────┘\n');
 });
 

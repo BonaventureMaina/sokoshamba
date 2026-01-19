@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ValidationError } from './errors';
 
 // ============================================================================
-// VALIDATION SCHEMAS
+// REUSABLE FIELD VALIDATORS
 // ============================================================================
 
 /**
@@ -34,6 +34,10 @@ const passwordField = z
   .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
   .regex(/[0-9]/, 'Password must contain at least one number')
   .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'Password must contain at least one special character');
+
+// ============================================================================
+// AUTHENTICATION VALIDATION
+// ============================================================================
 
 /**
  * User registration validation
@@ -119,6 +123,146 @@ export const changePasswordSchema = z.object({
 });
 
 // ============================================================================
+// USER PROFILE VALIDATION
+// ============================================================================
+
+/**
+ * Update user profile validation
+ */
+export const updateUserSchema = z.object({
+  firstName: z
+    .string()
+    .min(2, 'First name must be at least 2 characters')
+    .max(100, 'First name must not exceed 100 characters')
+    .trim()
+    .optional(),
+  
+  lastName: z
+    .string()
+    .min(2, 'Last name must be at least 2 characters')
+    .max(100, 'Last name must not exceed 100 characters')
+    .trim()
+    .optional(),
+  
+  phone: phoneField.optional(),
+});
+
+/**
+ * Update farmer profile validation
+ */
+export const updateFarmerProfileSchema = z.object({
+  farmName: z
+    .string()
+    .min(2, 'Farm name must be at least 2 characters')
+    .max(255, 'Farm name must not exceed 255 characters')
+    .trim()
+    .optional(),
+  
+  bio: z
+    .string()
+    .max(2000, 'Bio must not exceed 2000 characters')
+    .trim()
+    .optional(),
+  
+  locationCounty: z
+    .string()
+    .max(100, 'County name too long')
+    .trim()
+    .optional(),
+  
+  locationSubcounty: z
+    .string()
+    .max(100, 'Subcounty name too long')
+    .trim()
+    .optional(),
+  
+  locationDetails: z
+    .string()
+    .max(500, 'Location details too long')
+    .trim()
+    .optional(),
+  
+  locationLat: z
+    .number()
+    .min(-90, 'Invalid latitude')
+    .max(90, 'Invalid latitude')
+    .optional(),
+  
+  locationLng: z
+    .number()
+    .min(-180, 'Invalid longitude')
+    .max(180, 'Invalid longitude')
+    .optional(),
+});
+
+/**
+ * Address validation
+ */
+export const createAddressSchema = z.object({
+  label: z
+    .string()
+    .max(50, 'Label must not exceed 50 characters')
+    .trim()
+    .optional(),
+  
+  fullName: z
+    .string({ required_error: 'Full name is required' })
+    .min(2, 'Full name must be at least 2 characters')
+    .max(255, 'Full name must not exceed 255 characters')
+    .trim(),
+  
+  phone: phoneField,
+  
+  county: z
+    .string({ required_error: 'County is required' })
+    .min(2, 'County is required')
+    .max(100, 'County name too long')
+    .trim(),
+  
+  subcounty: z
+    .string()
+    .max(100, 'Subcounty name too long')
+    .trim()
+    .optional(),
+  
+  streetAddress: z
+    .string({ required_error: 'Street address is required' })
+    .min(5, 'Street address must be at least 5 characters')
+    .trim(),
+  
+  buildingDetails: z
+    .string()
+    .max(255, 'Building details too long')
+    .trim()
+    .optional(),
+  
+  deliveryInstructions: z
+    .string()
+    .max(500, 'Delivery instructions too long')
+    .trim()
+    .optional(),
+  
+  locationLat: z
+    .number()
+    .min(-90, 'Invalid latitude')
+    .max(90, 'Invalid latitude')
+    .optional(),
+  
+  locationLng: z
+    .number()
+    .min(-180, 'Invalid longitude')
+    .max(180, 'Invalid longitude')
+    .optional(),
+  
+  isDefault: z.boolean().optional(),
+});
+
+/**
+ * Update address validation (all fields optional)
+ */
+export const updateAddressSchema = createAddressSchema.partial();
+
+// ============================================================================
 // VALIDATION MIDDLEWARE
 // ============================================================================
 
@@ -133,7 +277,6 @@ export function validate(schema: z.ZodSchema) {
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        // FIX: Use error.issues not error.errors
         const fieldErrors = error.issues.map(err => ({
           field: err.path.join('.'),
           message: err.message,
@@ -158,7 +301,6 @@ export function validateQuery(schema: z.ZodSchema) {
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        // FIX: Use error.issues not error.errors
         const fieldErrors = error.issues.map(err => ({
           field: err.path.join('.'),
           message: err.message,
@@ -182,7 +324,6 @@ export function validateParams(schema: z.ZodSchema) {
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        // FIX: Use error.issues not error.errors
         const fieldErrors = error.issues.map(err => ({
           field: err.path.join('.'),
           message: err.message,
@@ -206,3 +347,7 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+export type UpdateFarmerProfileInput = z.infer<typeof updateFarmerProfileSchema>;
+export type CreateAddressInput = z.infer<typeof createAddressSchema>;
+export type UpdateAddressInput = z.infer<typeof updateAddressSchema>;
