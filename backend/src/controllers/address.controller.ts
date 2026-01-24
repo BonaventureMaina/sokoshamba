@@ -22,7 +22,7 @@ export async function getUserAddresses(
     const { userId } = req.params;
 
     const addresses = await prisma.address.findMany({
-      where: { userId },
+      where: { userId: userId as string },
       orderBy: [
         { isDefault: 'desc' }, // Default address first
         { createdAt: 'desc' }, // Then newest first
@@ -63,7 +63,7 @@ export async function createAddress(
     if (addressData.isDefault) {
       await prisma.address.updateMany({
         where: {
-          userId,
+          userId: userId as string,
           isDefault: true,
         },
         data: {
@@ -74,7 +74,7 @@ export async function createAddress(
 
     // If this is the user's first address, make it default
     const existingAddressCount = await prisma.address.count({
-      where: { userId },
+      where: { userId: userId as string },
     });
 
     const isFirstAddress = existingAddressCount === 0;
@@ -83,7 +83,7 @@ export async function createAddress(
     const address = await prisma.address.create({
       data: {
         ...addressData,
-        userId,
+        userId: userId as string,
         isDefault: addressData.isDefault || isFirstAddress,
       },
     });
@@ -118,7 +118,7 @@ export async function getAddress(
     const { id } = req.params;
 
     const address = await prisma.address.findUnique({
-      where: { id },
+      where: { id: id as string },
     });
 
     if (!address) {
@@ -156,7 +156,7 @@ export async function updateAddress(
 
     // Check if address exists
     const existingAddress = await prisma.address.findUnique({
-      where: { id },
+      where: { id: id as string },
       select: { id: true, userId: true },
     });
 
@@ -170,7 +170,7 @@ export async function updateAddress(
         where: {
           userId: existingAddress.userId,
           isDefault: true,
-          id: { not: id }, // Don't update the current address
+          id: { not: id as string }, // Don't update the current address
         },
         data: {
           isDefault: false,
@@ -180,7 +180,7 @@ export async function updateAddress(
 
     // Update address
     const updatedAddress = await prisma.address.update({
-      where: { id },
+      where: { id: id as string },
       data: {
         ...updateData,
         updatedAt: new Date(),
@@ -218,7 +218,7 @@ export async function deleteAddress(
 
     // Check if address exists
     const address = await prisma.address.findUnique({
-      where: { id },
+      where: { id: id as string },
       select: { id: true, userId: true, isDefault: true },
     });
 
@@ -228,7 +228,7 @@ export async function deleteAddress(
 
     // Delete address
     await prisma.address.delete({
-      where: { id },
+      where: { id: id as string },
     });
 
     // If deleted address was default, set another one as default
@@ -276,7 +276,7 @@ export async function setDefaultAddress(
 
     // Check if address exists
     const address = await prisma.address.findUnique({
-      where: { id },
+      where: { id: id as string },
       select: { id: true, userId: true },
     });
 
@@ -297,7 +297,7 @@ export async function setDefaultAddress(
 
     // Set this as default
     const updatedAddress = await prisma.address.update({
-      where: { id },
+      where: { id: id as string },
       data: {
         isDefault: true,
         updatedAt: new Date(),

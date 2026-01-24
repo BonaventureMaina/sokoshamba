@@ -66,7 +66,7 @@ export function generateAccessToken(
     expiresIn: JWT_EXPIRES_IN,
     issuer: 'sokoshamba-api',
     audience: 'sokoshamba-client',
-  });
+  } as jwt.SignOptions);
 }
 
 /**
@@ -92,7 +92,7 @@ export function generateRefreshToken(
     expiresIn: JWT_REFRESH_EXPIRES_IN,
     issuer: 'sokoshamba-api',
     audience: 'sokoshamba-client',
-  });
+  } as jwt.SignOptions);
 }
 
 /**

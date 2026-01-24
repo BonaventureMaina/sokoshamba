@@ -11,7 +11,8 @@ import { ValidationError } from './errors';
  * Trims and lowercases BEFORE email format validation
  */
 const emailField = z
-  .string({ required_error: 'Email is required' })
+  .string()
+  .min(1, 'Email is required')
   .transform((val) => val.trim().toLowerCase())
   .pipe(z.string().email('Invalid email format'));
 
@@ -19,7 +20,8 @@ const emailField = z
  * Reusable phone validation
  */
 const phoneField = z
-  .string({ required_error: 'Phone number is required' })
+  .string()
+  .min(1, 'Phone number is required')
   .regex(/^254[17]\d{8}$/, 'Phone must be valid Kenyan format (254XXXXXXXXX)')
   .trim();
 
@@ -27,7 +29,7 @@ const phoneField = z
  * Reusable password validation
  */
 const passwordField = z
-  .string({ required_error: 'Password is required' })
+  .string()
   .min(8, 'Password must be at least 8 characters')
   .max(128, 'Password must not exceed 128 characters')
   .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
@@ -48,20 +50,21 @@ export const registerSchema = z.object({
   password: passwordField,
   
   firstName: z
-    .string({ required_error: 'First name is required' })
+    .string()
     .min(2, 'First name must be at least 2 characters')
     .max(100, 'First name must not exceed 100 characters')
     .trim(),
   
   lastName: z
-    .string({ required_error: 'Last name is required' })
+    .string()
     .min(2, 'Last name must be at least 2 characters')
     .max(100, 'Last name must not exceed 100 characters')
     .trim(),
   
   role: z
-    .enum(['consumer', 'farmer'], {
-      errorMap: () => ({ message: 'Role must be either "consumer" or "farmer"' }),
+    .enum(['consumer', 'farmer'])
+    .refine((val) => ['consumer', 'farmer'].includes(val), {
+      message: 'Role must be either "consumer" or "farmer"',
     }),
 });
 
@@ -71,7 +74,7 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
   email: emailField,
   password: z
-    .string({ required_error: 'Password is required' })
+    .string()
     .min(1, 'Password is required'),
 });
 
@@ -80,7 +83,7 @@ export const loginSchema = z.object({
  */
 export const refreshTokenSchema = z.object({
   refreshToken: z
-    .string({ required_error: 'Refresh token is required' })
+    .string()
     .min(1, 'Refresh token is required'),
 });
 
@@ -96,7 +99,7 @@ export const forgotPasswordSchema = z.object({
  */
 export const resetPasswordSchema = z.object({
   token: z
-    .string({ required_error: 'Reset token is required' })
+    .string()
     .min(1, 'Reset token is required'),
   
   password: passwordField,
@@ -107,7 +110,7 @@ export const resetPasswordSchema = z.object({
  */
 export const verifyEmailSchema = z.object({
   token: z
-    .string({ required_error: 'Verification token is required' })
+    .string()
     .min(1, 'Verification token is required'),
 });
 
@@ -116,7 +119,7 @@ export const verifyEmailSchema = z.object({
  */
 export const changePasswordSchema = z.object({
   currentPassword: z
-    .string({ required_error: 'Current password is required' })
+    .string()
     .min(1, 'Current password is required'),
   
   newPassword: passwordField,
@@ -206,7 +209,7 @@ export const createAddressSchema = z.object({
     .optional(),
   
   fullName: z
-    .string({ required_error: 'Full name is required' })
+    .string()
     .min(2, 'Full name must be at least 2 characters')
     .max(255, 'Full name must not exceed 255 characters')
     .trim(),
@@ -214,7 +217,7 @@ export const createAddressSchema = z.object({
   phone: phoneField,
   
   county: z
-    .string({ required_error: 'County is required' })
+    .string()
     .min(2, 'County is required')
     .max(100, 'County name too long')
     .trim(),
@@ -226,7 +229,7 @@ export const createAddressSchema = z.object({
     .optional(),
   
   streetAddress: z
-    .string({ required_error: 'Street address is required' })
+    .string()
     .min(5, 'Street address must be at least 5 characters')
     .trim(),
   
@@ -263,6 +266,191 @@ export const createAddressSchema = z.object({
 export const updateAddressSchema = createAddressSchema.partial();
 
 // ============================================================================
+// PRODUCT VALIDATION
+// ============================================================================
+
+/**
+ * Create product validation
+ */
+export const createProductSchema = z.object({
+  categoryId: z
+    .string()
+    .uuid('Invalid category ID'),
+  
+  name: z
+    .string()
+    .min(3, 'Product name must be at least 3 characters')
+    .max(255, 'Product name must not exceed 255 characters')
+    .trim(),
+  
+  description: z
+    .string()
+    .max(2000, 'Description must not exceed 2000 characters')
+    .trim()
+    .optional(),
+  
+  unit: z
+    .string()
+    .min(1, 'Unit is required')
+    .max(50, 'Unit must not exceed 50 characters')
+    .trim(),
+  
+  unitQuantity: z
+    .number()
+    .positive('Unit quantity must be positive')
+    .default(1),
+  
+  priceKsh: z
+    .number()
+    .positive('Price must be positive'),
+  
+  stockQuantity: z
+    .number()
+    .int('Stock quantity must be an integer')
+    .nonnegative('Stock quantity cannot be negative')
+    .default(0),
+  
+  isOrganic: z
+    .boolean()
+    .default(false),
+  
+  isAvailable: z
+    .boolean()
+    .default(true),
+  
+  tags: z
+    .array(z.string().trim())
+    .default([]),
+});
+
+/**
+ * Update product validation (all fields optional)
+ */
+export const updateProductSchema = createProductSchema.partial();
+
+/**
+ * Product query filters validation
+ */
+export const productQuerySchema = z.object({
+  page: z
+    .coerce
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .default(1),
+  
+  limit: z
+    .coerce
+    .number()
+    .int()
+    .positive()
+    .max(100)
+    .optional()
+    .default(20),
+  
+  categoryId: z
+    .string()
+    .uuid()
+    .optional(),
+  
+  farmerId: z
+    .string()
+    .uuid()
+    .optional(),
+  
+  minPrice: z
+    .coerce
+    .number()
+    .nonnegative()
+    .optional(),
+  
+  maxPrice: z
+    .coerce
+    .number()
+    .positive()
+    .optional(),
+  
+  isOrganic: z
+    .enum(['true', 'false'])
+    .transform((val) => val === 'true')
+    .optional(),
+  
+  isAvailable: z
+    .enum(['true', 'false'])
+    .transform((val) => val === 'true')
+    .optional(),
+  
+  county: z
+    .string()
+    .trim()
+    .optional(),
+  
+  search: z
+    .string()
+    .trim()
+    .optional(),
+  
+  sortBy: z
+    .enum(['price_asc', 'price_desc', 'rating', 'newest', 'popular'])
+    .optional()
+    .default('newest'),
+});
+
+// ============================================================================
+// CATEGORY VALIDATION
+// ============================================================================
+
+/**
+ * Create category validation
+ */
+export const createCategorySchema = z.object({
+  name: z
+    .string()
+    .min(2, 'Category name must be at least 2 characters')
+    .max(100, 'Category name must not exceed 100 characters')
+    .trim(),
+  
+  slug: z
+    .string()
+    .min(2, 'Slug must be at least 2 characters')
+    .max(100, 'Slug must not exceed 100 characters')
+    .regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens')
+    .trim(),
+  
+  description: z
+    .string()
+    .max(500, 'Description must not exceed 500 characters')
+    .trim()
+    .optional(),
+  
+  iconUrl: z
+    .string()
+    .url('Invalid icon URL')
+    .optional(),
+  
+  parentCategoryId: z
+    .string()
+    .uuid('Invalid parent category ID')
+    .optional(),
+  
+  displayOrder: z
+    .number()
+    .int()
+    .nonnegative()
+    .default(0),
+  
+  isActive: z
+    .boolean()
+    .default(true),
+});
+
+/**
+ * Update category validation (all fields optional)
+ */
+export const updateCategorySchema = createCategorySchema.partial();
+
+// ============================================================================
 // VALIDATION MIDDLEWARE
 // ============================================================================
 
@@ -297,7 +485,7 @@ export function validateQuery(schema: z.ZodSchema) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       const validated = schema.parse(req.query);
-      req.query = validated;
+      req.query = validated as any;
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -320,7 +508,7 @@ export function validateParams(schema: z.ZodSchema) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       const validated = schema.parse(req.params);
-      req.params = validated;
+      req.params = validated as any;
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -351,3 +539,8 @@ export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type UpdateFarmerProfileInput = z.infer<typeof updateFarmerProfileSchema>;
 export type CreateAddressInput = z.infer<typeof createAddressSchema>;
 export type UpdateAddressInput = z.infer<typeof updateAddressSchema>;
+export type CreateProductInput = z.infer<typeof createProductSchema>;
+export type UpdateProductInput = z.infer<typeof updateProductSchema>;
+export type ProductQueryInput = z.infer<typeof productQuerySchema>;
+export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
+export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;

@@ -32,7 +32,7 @@ export async function getUserProfile(
 
     // Find user with farmer profile if applicable
     const user = await prisma.user.findUnique({
-      where: { id },
+      where: { id: id as string },
       select: {
         id: true,
         email: true,
@@ -96,7 +96,7 @@ export async function updateUserProfile(
 
     // Verify user exists
     const existingUser = await prisma.user.findUnique({
-      where: { id },
+      where: { id: id as string },
       select: { id: true, role: true },
     });
 
@@ -108,7 +108,7 @@ export async function updateUserProfile(
     let updatedUser;
     try {
       updatedUser = await prisma.user.update({
-        where: { id },
+        where: { id: id as string },
         data: {
           ...updateData,
           updatedAt: new Date(),
@@ -165,7 +165,7 @@ export async function deleteUserAccount(
 
     // Verify user exists
     const user = await prisma.user.findUnique({
-      where: { id },
+      where: { id: id as string },
       select: {
         id: true,
         profileImageUrl: true,
@@ -186,7 +186,7 @@ export async function deleteUserAccount(
 
     // Delete user (cascades to farmer_profile, addresses, etc.)
     await prisma.user.delete({
-      where: { id },
+      where: { id: id as string },
     });
 
     res.status(200).json({
@@ -225,7 +225,7 @@ export async function uploadProfileImage(
 
     // Verify user exists
     const user = await prisma.user.findUnique({
-      where: { id },
+      where: { id: id as string },
       select: {
         id: true,
         profileImageUrl: true,
@@ -250,7 +250,7 @@ export async function uploadProfileImage(
 
     // Update user with new image URL
     const updatedUser = await prisma.user.update({
-      where: { id },
+      where: { id: id as string },
       data: {
         profileImageUrl: uploadResult.secureUrl,
         updatedAt: new Date(),
@@ -303,7 +303,7 @@ export async function deleteProfileImage(
 
     // Get user with current image
     const user = await prisma.user.findUnique({
-      where: { id },
+      where: { id: id as string },
       select: {
         id: true,
         profileImageUrl: true,
@@ -323,7 +323,7 @@ export async function deleteProfileImage(
 
     // Update user record
     await prisma.user.update({
-      where: { id },
+      where: { id: id as string },
       data: {
         profileImageUrl: null,
         updatedAt: new Date(),

@@ -14,6 +14,8 @@ import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import addressRoutes from './routes/address.routes';
 import farmerRoutes from './routes/farmer.routes';
+import productRoutes from './routes/product.routes';
+import categoryRoutes from './routes/category.routes';
 
 // Load environment variables
 dotenv.config();
@@ -153,6 +155,12 @@ app.use('/api', addressRoutes);
 // Mount farmer routes
 app.use('/api/farmers', farmerRoutes);
 
+// Mount product routes
+app.use('/api/products', productRoutes);
+
+// Mount category routes
+app.use('/api/categories', categoryRoutes);
+
 // ============================================================================
 // ERROR HANDLING (must be after all routes)
 // ============================================================================
@@ -172,7 +180,7 @@ const server = app.listen(PORT, () => {
   console.log('│ 🚀 SokoShamba API Server Started                   │');
   console.log('└─────────────────────────────────────────────────────┘');
   console.log(`🌍 Server running on: http://localhost:${PORT}`);
-  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🗄️  Database check: http://localhost:${PORT}/health/db`);
   console.log(`💾 Redis check: http://localhost:${PORT}/health/redis`);
@@ -203,6 +211,20 @@ const server = app.listen(PORT, () => {
   console.log(`   PATCH  /api/farmers/:id`);
   console.log(`   GET    /api/farmers/:id/products`);
   console.log(`   GET    /api/farmers/:id/reviews`);
+  console.log('\n🥬 Product Management Endpoints:');
+  console.log(`   GET    /api/products`);
+  console.log(`   POST   /api/products`);
+  console.log(`   GET    /api/products/:id`);
+  console.log(`   PATCH  /api/products/:id`);
+  console.log(`   DELETE /api/products/:id`);
+  console.log(`   POST   /api/products/:id/images`);
+  console.log(`   DELETE /api/products/:id/images/:imageIndex`);
+  console.log('\n📂 Category Management Endpoints:');
+  console.log(`   GET    /api/categories`);
+  console.log(`   GET    /api/categories/:slug`);
+  console.log(`   GET    /api/categories/:slug/products`);
+  console.log(`   POST   /api/categories`);
+  console.log(`   PATCH  /api/categories/:id`);
   console.log('└─────────────────────────────────────────────────────┘\n');
 });
 

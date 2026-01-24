@@ -23,7 +23,7 @@ export async function getFarmerProfile(
 
     // Get farmer profile with user info and stats
     const farmer = await prisma.farmerProfile.findUnique({
-      where: { id },
+      where: { id: id as string },
       include: {
         user: {
           select: {
@@ -76,7 +76,7 @@ export async function updateFarmerProfile(
 
     // Verify farmer profile exists
     const existingFarmer = await prisma.farmerProfile.findUnique({
-      where: { id },
+      where: { id: id as string },
       select: { id: true, userId: true },
     });
 
@@ -91,7 +91,7 @@ export async function updateFarmerProfile(
 
     // Update farmer profile
     const updatedFarmer = await prisma.farmerProfile.update({
-      where: { id },
+      where: { id: id as string },
       data: {
         ...updateData,
         updatedAt: new Date(),
@@ -229,7 +229,7 @@ export async function getFarmerProducts(
 
     // Verify farmer exists
     const farmer = await prisma.farmerProfile.findUnique({
-      where: { id },
+      where: { id: id as string },
       select: { userId: true },
     });
 
@@ -294,7 +294,7 @@ export async function getFarmerReviews(
 
     // Verify farmer exists
     const farmer = await prisma.farmerProfile.findUnique({
-      where: { id },
+      where: { id: id as string },
       select: { userId: true },
     });
 

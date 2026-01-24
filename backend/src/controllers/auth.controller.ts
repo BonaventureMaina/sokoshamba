@@ -81,8 +81,12 @@ export async function register(
       });
     }
 
-    // Generate tokens
-    const tokens = generateTokenPair(user.id, user.email, user.role);
+    // Generate tokens (user.role from Prisma is string, needs type assertion)
+    const tokens = generateTokenPair(
+      user.id,
+      user.email,
+      user.role as 'admin' | 'consumer' | 'farmer'
+    );
 
     // TODO: Send verification email
     // await sendVerificationEmail(user.email, user.firstName);
@@ -150,12 +154,16 @@ export async function login(
       throw new UnauthorizedError('Invalid email or password');
     }
 
-    // Generate tokens
-    const tokens = generateTokenPair(user.id, user.email, user.role);
+    // Generate tokens (user.role from Prisma is string, needs type assertion)
+    const tokens = generateTokenPair(
+      user.id,
+      user.email,
+      user.role as 'admin' | 'consumer' | 'farmer'
+    );
 
     // Update last login timestamp
     await prisma.user.update({
-      where: { id: user.id },
+      where: { id: user.id as string },
       data: { lastLoginAt: new Date() },
     });
 
@@ -253,8 +261,12 @@ export async function refreshToken(
       throw new UnauthorizedError('Account has been deactivated');
     }
 
-    // Generate new token pair
-    const tokens = generateTokenPair(user.id, user.email, user.role);
+    // Generate new token pair (user.role from Prisma is string, needs type assertion)
+    const tokens = generateTokenPair(
+      user.id,
+      user.email,
+      user.role as 'admin' | 'consumer' | 'farmer'
+    );
 
     res.status(200).json({
       success: true,
