@@ -1,0 +1,581 @@
+============================================================
+SOKOSHAMBA 1.0 — SYSTEM DESIGN DOCUMENT
+============================================================
+Version:      1.0
+Date:         2026-06-21
+Status:       Approved
+Project:      SokoShamba (Soko = Market, Shamba = Farm)
+Market:       Kenya (Nairobi initial), East Africa expansion
+============================================================
+
+1. SYSTEM OVERVIEW
+------------------------------------------------------------
+SokoShamba is a dual-sided e-commerce and logistics platform
+connecting Kenyan farmers directly with urban consumers. It
+combines a marketplace (farmers list produce, consumers browse
+and order) with integrated logistics (SokoShamba coordinates
+point-to-point delivery via courier partners).
+
+Revenue model: 10-15% take rate on transactions.
+
+Three actors:
+  - Consumer (urban buyer)
+  - Farmer   (verified seller)
+  - Admin    (platform operations: Owner or Operator role)
+
+The system is a monolithic Django application served by
+Gunicorn/Nginx on a Debian server, backed by managed
+PostgreSQL. External integrations: Safaricom Daraja (M-Pesa
+STK Push + B2C) and Africa's Talking (SMS).
+
+
+2. TECHNOLOGY STACK
+------------------------------------------------------------
+Component           Choice                  Notes
+------------------------------------------------------------
+Backend Language    Python 3                Debian: apt install python3
+Web Framework       Django                  Built-in admin, auth, ORM, migrations
+Database            PostgreSQL 17           Local dev: apt install postgresql
+                                            Production: managed host (Railway/Supabase)
+WSGI Server         Gunicorn                pip install gunicorn
+Reverse Proxy       Nginx                   HTTPS termination, static files
+Process Manager     systemd                 Auto-restart on crash/reboot
+Templating          Django Templates        Server-side rendering
+Frontend            HTML + CSS + vanilla JS No build step, mobile-responsive, terminal-editable
+SMS                 Africa's Talking API    Direct HTTP via requests library
+M-Pesa              Safaricom Daraja API    Direct REST calls (STK Push, B2C)
+Task Scheduling     cron + Django mgmt cmds Auto-cancel, payout retries, SMS retries
+Secrets             python-dotenv + .env    Keys outside codebase
+Media Storage       S3-compatible (R2/B2)   User-uploaded photos via django-storages
+Version Control     Git                     apt install git
+Testing             Django test framework   python manage.py test
+
+
+3. HIGH-LEVEL ARCHITECTURE
+------------------------------------------------------------
+
+                    ┌──────────────┐
+                    │   INTERNET   │
+                    └──────┬───────┘
+                           │
+              ┌────────────▼────────────┐
+              │         Nginx            │
+              │  (HTTPS, static files,   │
+              │   reverse proxy)         │
+              └────────────┬────────────┘
+                           │
+              ┌────────────▼────────────┐
+              │     Gunicorn (WSGI)      │
+              │  ┌────────────────────┐  │
+              │  │    Django App      │  │
+              │  │  ┌──────────────┐  │  │
+              │  │  │ Consumer     │  │  │
+              │  │  │ Farmer       │  │  │
+              │  │  │ Admin        │  │  │
+              │  │  │ (Django      │  │  │
+              │  │  │  Admin +     │  │  │
+              │  │  │  custom      │  │  │
+              │  │  │  actions)    │  │  │
+              │  │  ├──────────────┤  │  │
+              │  │  │ M-Pesa Svc   │  │  │
+              │  │  │ SMS Svc      │  │  │
+              │  │  │ Cron mgmt    │  │  │
+              │  │  │   commands   │  │  │
+              │  │  └──────────────┘  │  │
+              │  └────────────────────┘  │
+              └────────────┬────────────┘
+                           │
+              ┌────────────▼────────────┐
+              │        systemd          │
+              │    (auto-restart)       │
+              └─────────────────────────┘
+                           │
+         ┌─────────────────┼─────────────────┐
+         │                 │                 │
+  ┌──────▼──────┐  ┌───────▼───────┐  ┌──────▼──────┐
+  │  PostgreSQL │  │  Africa's     │  │  Safaricom   │
+  │  (managed)  │  │  Talking      │  │  Daraja API  │
+  │             │  │  (SMS)        │  │  (M-Pesa)    │
+  └─────────────┘  └───────────────┘  └─────────────┘
+
+
+3.1 M-Pesa Callback Flow (Critical)
+------------------------------------------------------------
+STK Push is asynchronous — two separate interactions:
+
+  OUTBOUND: Django calls Daraja to initiate STK Push.
+            Returns immediately ("check your phone").
+            Gunicorn worker is NOT blocked.
+
+  INBOUND:  Safaricom calls back /webhooks/mpesa/callback
+            on its own schedule (after user enters PIN).
+            This is a dedicated, UNAUTHENTICATED endpoint.
+            Signature verification (Safaricom public key
+            or shared secret) is MANDATORY before any DB
+            write — prevents fake payment confirmations.
+
+No message queue needed at this scale. The callback is a
+standard Django view, fully decoupled from the checkout
+request.
+
+3.2 Cron Job Design
+------------------------------------------------------------
+- Decision 5 auto-cancel: runs every 60 seconds via cron.
+  Django management command uses atomic status check
+  (SELECT ... FOR UPDATE / UPDATE WHERE status='pending')
+  to guarantee idempotency — no double-cancellation.
+
+- NFR-003/004 payout & refund retries: separate cron job
+  or same sweep. Retry with exponential backoff, max 3
+  attempts, then flag for manual admin (AR-018/AR-022).
+
+- NFR-017 SMS retry: failed sends retried once; persistent
+  failures surfaced to admin.
+
+3.3 Media Storage
+------------------------------------------------------------
+User-uploaded files (farmer photos, product images, review
+photos) stored in S3-compatible object storage (Cloudflare
+R2 or Backblaze B2). django-storages handles uploads.
+Nginx does NOT serve media files directly. This puts all
+user content under provider-managed durability, satisfying
+NFR-014 backup requirements without custom file-copy scripts.
+
+3.4 Monitoring
+------------------------------------------------------------
+Public /health endpoint (returns 200 + DB connectivity check).
+External free service (UptimeRobot) pings regularly.
+Supports NFR-013 uptime tracking without a full observability
+stack.
+
+
+4. DATABASE SCHEMA
+------------------------------------------------------------
+Managed by Django ORM + migrations. PostgreSQL 17.
+20 tables + 1 OTP table. Total: 21 tables.
+
+4.1 users
+------------------------------------------------------------
+Core user table (Django AbstractUser extension).
+  id            SERIAL PRIMARY KEY
+  phone         VARCHAR(15) UNIQUE NOT NULL
+  email         VARCHAR(254) NULL UNIQUE
+  password      VARCHAR(128) NULL
+                  -- NULL for M-Pesa-created accounts (no password)
+                  -- Django set_unusable_password() used
+  phone_verified BOOLEAN NOT NULL DEFAULT FALSE
+                  -- TRUE if verified via M-Pesa callback (Decision 2)
+                  -- or OTP confirmation (CR-010)
+  role          VARCHAR(10) NOT NULL CHECK(role IN
+                  ('consumer','farmer','admin'))
+  is_active     BOOLEAN DEFAULT TRUE
+  date_joined   TIMESTAMPTZ DEFAULT NOW()
+  last_login    TIMESTAMPTZ NULL
+  is_staff      BOOLEAN DEFAULT FALSE       -- Django admin access
+  is_superuser  BOOLEAN DEFAULT FALSE       -- Owner role (Decision 9)
+
+Indexes: UNIQUE(phone), UNIQUE(email)
+
+Login paths:
+  - M-Pesa created accounts: OTP-based login (primary)
+  - Proactive signup: phone/email + password (CR-009)
+  - Password can be added later for M-Pesa accounts (CR-009b)
+
+4.2 consumer_profiles
+------------------------------------------------------------
+  id              SERIAL PRIMARY KEY
+  user_id         INTEGER UNIQUE NOT NULL REFERENCES users(id)
+                    ON DELETE CASCADE
+  name            VARCHAR(100) NOT NULL
+  profile_photo_url VARCHAR(500) NULL   -- S3 URL
+
+4.3 farmer_profiles
+------------------------------------------------------------
+  id                  SERIAL PRIMARY KEY
+  user_id             INTEGER UNIQUE NOT NULL REFERENCES users(id)
+                        ON DELETE CASCADE
+  farm_name           VARCHAR(150) NOT NULL
+  county              VARCHAR(100) NOT NULL
+  sub_county          VARCHAR(100) NULL
+  bio                 TEXT NULL
+  photo_url           VARCHAR(500) NULL   -- S3 URL
+  verification_status VARCHAR(20) NOT NULL DEFAULT 'pending'
+                        CHECK(status IN ('pending','verified','rejected'))
+  verification_notes  TEXT NULL            -- Admin phone call notes (AR-006)
+  verified_at         TIMESTAMPTZ NULL
+  verified_by         INTEGER NULL REFERENCES users(id)
+                        -- Admin who approved (AR-007)
+  is_active           BOOLEAN DEFAULT TRUE -- Suspension (AR-032)
+
+Index: INDEX(verification_status)
+
+Rules:
+  - Unverified farmers (status='pending') invisible to consumers
+  - Product listing gated behind status='verified' AND is_active=TRUE
+  - Verification is phone-call-based (Decision 4), no document upload
+
+4.4 delivery_addresses
+------------------------------------------------------------
+  id            SERIAL PRIMARY KEY
+  user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+  label         VARCHAR(100) NULL          -- "Home", "Work"
+  county        VARCHAR(100) NOT NULL
+  area          VARCHAR(150) NOT NULL
+  landmark      VARCHAR(200) NULL
+  instructions  TEXT NULL                  -- CR-024
+  is_default    BOOLEAN DEFAULT FALSE
+
+Hardening: Partial unique index for one default per user:
+  CREATE UNIQUE INDEX one_default_per_user
+    ON delivery_addresses (user_id) WHERE is_default = true;
+
+4.5 categories
+------------------------------------------------------------
+  id        SERIAL PRIMARY KEY
+  name      VARCHAR(100) UNIQUE NOT NULL
+  is_active BOOLEAN DEFAULT TRUE
+
+4.6 products
+------------------------------------------------------------
+  id                  SERIAL PRIMARY KEY
+  farmer_id           INTEGER NOT NULL REFERENCES farmer_profiles(id)
+                        ON DELETE CASCADE
+  category_id         INTEGER NULL REFERENCES categories(id)
+                        ON DELETE SET NULL
+  name                VARCHAR(150) NOT NULL
+  description         TEXT NULL
+  unit                VARCHAR(50) NOT NULL    -- "kg","bunch","piece"
+  price               DECIMAL(10,2) NOT NULL
+  available_quantity  DECIMAL(10,2) NOT NULL
+  is_organic          BOOLEAN DEFAULT FALSE
+  is_active           BOOLEAN DEFAULT TRUE
+  created_at          TIMESTAMPTZ DEFAULT NOW()
+  updated_at          TIMESTAMPTZ DEFAULT NOW()
+
+Indexes: INDEX(farmer_id, is_active), INDEX(category_id)
+
+IMPLEMENTATION WARNING: available_quantity is subject to race
+conditions on concurrent checkout. Must use atomic decrement
+(UPDATE ... WHERE available_quantity >= X) or row-level locking
+at order creation. Not a schema issue — a checkout logic one.
+
+4.7 product_images
+------------------------------------------------------------
+  id         SERIAL PRIMARY KEY
+  product_id INTEGER NOT NULL REFERENCES products(id)
+               ON DELETE CASCADE
+  image_url  VARCHAR(500) NOT NULL    -- S3 URL
+  order      INTEGER DEFAULT 0        -- Display order
+
+4.8 carts
+------------------------------------------------------------
+  id          SERIAL PRIMARY KEY
+  user_id     INTEGER NULL UNIQUE REFERENCES users(id)
+                ON DELETE CASCADE
+  session_key VARCHAR(40) NULL UNIQUE   -- Django session key (guest)
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+
+Hardening: Database-level mutual exclusivity:
+  CONSTRAINT cart_exclusive CHECK (
+    (user_id IS NOT NULL AND session_key IS NULL) OR
+    (user_id IS NULL AND session_key IS NOT NULL)
+  );
+
+Guest cart merge: on account creation at checkout (Decision 2),
+guest cart is merged into user's cart.
+
+4.9 cart_items
+------------------------------------------------------------
+  id         SERIAL PRIMARY KEY
+  cart_id    INTEGER NOT NULL REFERENCES carts(id) ON DELETE CASCADE
+  product_id INTEGER NOT NULL REFERENCES products(id)
+  quantity   DECIMAL(10,2) NOT NULL CHECK(quantity > 0)
+  added_at   TIMESTAMPTZ DEFAULT NOW()
+
+UNIQUE(cart_id, product_id)
+
+Single-farmer enforcement (CR-031, P0): APPLICATION-LEVEL.
+Before inserting, check that all existing cart items belong
+to same farmer as the new product. Reject with prompt if not.
+Requires dedicated test coverage — no schema-level enforcement.
+
+4.10 orders
+------------------------------------------------------------
+  id                         SERIAL PRIMARY KEY
+  consumer_id                INTEGER NOT NULL REFERENCES users(id)
+  farmer_id                  INTEGER NOT NULL REFERENCES farmer_profiles(id)
+                               -- Single-farmer-per-order (Decision 3)
+  address_id                 INTEGER NULL REFERENCES delivery_addresses(id)
+                               ON DELETE SET NULL
+                               -- Non-load-bearing FK; snapshot is source of truth
+  status                     VARCHAR(20) NOT NULL DEFAULT 'pending'
+                               CHECK(status IN (
+                                 'pending','confirmed','farmer_declined',
+                                 'preparing','ready_for_pickup',
+                                 'pickup_requested','courier_assigned',
+                                 'in_transit','delivered',
+                                 'auto_cancelled','consumer_cancelled'))
+  decline_reason             TEXT NULL     -- FR-025
+  subtotal                   DECIMAL(10,2) NOT NULL
+  delivery_fee               DECIMAL(10,2) NOT NULL
+  total                      DECIMAL(10,2) NOT NULL
+  delivery_address_snapshot  JSONB NOT NULL
+                               -- Frozen: county, area, landmark, instructions
+  consumer_phone_at_order    VARCHAR(15) NOT NULL
+  created_at                 TIMESTAMPTZ DEFAULT NOW()
+  confirmed_at               TIMESTAMPTZ NULL
+  ready_at                   TIMESTAMPTZ NULL
+  pickup_requested_at        TIMESTAMPTZ NULL
+  courier_assigned_at        TIMESTAMPTZ NULL
+  in_transit_at              TIMESTAMPTZ NULL
+  delivered_at               TIMESTAMPTZ NULL
+  auto_cancel_at             TIMESTAMPTZ NULL  -- T+30 min (Decision 5)
+  escalation_sent            BOOLEAN DEFAULT FALSE  -- T+15 SMS
+  consumer_cancelled_at      TIMESTAMPTZ NULL
+  farmer_declined_at         TIMESTAMPTZ NULL
+
+Indexes: INDEX(consumer_id, status), INDEX(farmer_id, status),
+         INDEX(status, auto_cancel_at)
+
+Decision 5 SLA: T+15 escalation SMS, T+30 auto-cancel + refund.
+Farmer decline (FR-025) triggers refund same as auto-cancel.
+
+4.11 order_items
+------------------------------------------------------------
+  id           SERIAL PRIMARY KEY
+  order_id     INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE
+  product_id   INTEGER NOT NULL REFERENCES products(id)
+  product_name VARCHAR(150) NOT NULL   -- Snapshot at order time
+  unit         VARCHAR(50) NOT NULL    -- Snapshot
+  price        DECIMAL(10,2) NOT NULL  -- Snapshot (locked-in)
+  quantity     DECIMAL(10,2) NOT NULL
+
+4.12 mpesa_payments
+------------------------------------------------------------
+  id                    SERIAL PRIMARY KEY
+  order_id              INTEGER NOT NULL REFERENCES orders(id)
+                          -- NOT UNIQUE — allows multiple attempts (CR-039 retry)
+  merchant_request_id   VARCHAR(50) NOT NULL
+  checkout_request_id   VARCHAR(50) NULL    -- From callback
+  amount                DECIMAL(10,2) NOT NULL
+  mpesa_receipt_number  VARCHAR(50) NULL
+  phone_number          VARCHAR(15) NOT NULL -- Payer's phone
+  status                VARCHAR(20) NOT NULL DEFAULT 'pending'
+                          CHECK(status IN ('pending','completed','failed'))
+  result_description    TEXT NULL
+  created_at            TIMESTAMPTZ DEFAULT NOW()
+  updated_at            TIMESTAMPTZ DEFAULT NOW()
+
+Index: INDEX(order_id, status)
+
+An order is "paid" if ANY associated row has status='completed'.
+
+4.13 payouts
+------------------------------------------------------------
+  id             SERIAL PRIMARY KEY
+  order_id       INTEGER UNIQUE NOT NULL REFERENCES orders(id)
+                   -- One payout per delivered order
+  farmer_id      INTEGER NOT NULL REFERENCES farmer_profiles(id)
+  amount         DECIMAL(10,2) NOT NULL  -- Net (sale - commission)
+  phone_number   VARCHAR(15) NOT NULL    -- Farmer's phone (B2C)
+  status         VARCHAR(20) NOT NULL DEFAULT 'pending'
+                   CHECK(status IN ('pending','processing','completed','failed'))
+  failure_reason TEXT NULL
+  retry_count    INTEGER DEFAULT 0       -- Max 3 (NFR-003/004)
+  created_at     TIMESTAMPTZ DEFAULT NOW()
+  completed_at   TIMESTAMPTZ NULL
+
+Decision 7: Automatic per-order payout upon delivery confirmation.
+
+4.14 refunds
+------------------------------------------------------------
+  id             SERIAL PRIMARY KEY
+  order_id       INTEGER UNIQUE NOT NULL REFERENCES orders(id)
+  payment_id     INTEGER NOT NULL REFERENCES mpesa_payments(id)
+                   -- The successful payment being refunded
+  amount         DECIMAL(10,2) NOT NULL
+  status         VARCHAR(20) NOT NULL DEFAULT 'pending'
+                   CHECK(status IN ('pending','processing','completed','failed'))
+  failure_reason TEXT NULL
+  retry_count    INTEGER DEFAULT 0
+  created_at     TIMESTAMPTZ DEFAULT NOW()
+  completed_at   TIMESTAMPTZ NULL
+
+4.15 riders
+------------------------------------------------------------
+  id           SERIAL PRIMARY KEY
+  name         VARCHAR(100) NOT NULL
+  phone        VARCHAR(15) NOT NULL
+  vehicle_type VARCHAR(50) NULL    -- 'boda','van'
+  is_active    BOOLEAN DEFAULT TRUE
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+
+Admin-maintained courier list (AR-013).
+
+4.16 courier_assignments
+------------------------------------------------------------
+  id                  SERIAL PRIMARY KEY
+  order_id            INTEGER UNIQUE NOT NULL REFERENCES orders(id)
+  rider_id            INTEGER NOT NULL REFERENCES riders(id)
+  status_link_token   VARCHAR(64) UNIQUE NOT NULL
+  status_link_expires TIMESTAMPTZ NOT NULL  -- 6 hours from assignment
+  status              VARCHAR(20) NOT NULL DEFAULT 'assigned'
+                        CHECK(status IN ('assigned','en_route','picked_up','delivered'))
+  assigned_at         TIMESTAMPTZ DEFAULT NOW()
+  picked_up_at        TIMESTAMPTZ NULL
+  delivered_at        TIMESTAMPTZ NULL
+
+Token behavior (Decision 8 resolved):
+  - One token per order, valid through delivery lifecycle
+  - Outer expiry: 6 hours (safety cap)
+  - Each transition is idempotent — tapping "delivered" twice
+    is a safe no-op checked against current order status
+  - Satisfies NFR-001 (non-replayable for same transition)
+    without fragility of separate tokens per step
+
+4.17 reviews
+------------------------------------------------------------
+  id          SERIAL PRIMARY KEY
+  order_id    INTEGER UNIQUE NOT NULL REFERENCES orders(id)
+                -- One review per order
+  consumer_id INTEGER NOT NULL REFERENCES users(id)
+  farmer_id   INTEGER NOT NULL REFERENCES farmer_profiles(id)
+  rating      INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5)
+  text        TEXT NULL
+  photo_url   VARCHAR(500) NULL    -- S3 URL
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+
+4.18 order_issues
+------------------------------------------------------------
+  id          SERIAL PRIMARY KEY
+  order_id    INTEGER NOT NULL REFERENCES orders(id)
+  consumer_id INTEGER NOT NULL REFERENCES users(id)
+  issue_type  VARCHAR(50) NOT NULL   -- 'missing','damaged','wrong'
+  description TEXT NULL
+  status      VARCHAR(20) NOT NULL DEFAULT 'open'
+                CHECK(status IN ('open','resolved','rejected'))
+  resolution  TEXT NULL              -- Admin notes
+  resolved_by INTEGER NULL REFERENCES users(id)  -- AR-027
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+  resolved_at TIMESTAMPTZ NULL
+
+4.19 notification_logs
+------------------------------------------------------------
+  id                  SERIAL PRIMARY KEY
+  user_id             INTEGER NULL REFERENCES users(id)
+  order_id            INTEGER NULL REFERENCES orders(id)
+  channel             VARCHAR(10) NOT NULL  -- 'sms','push','email'
+  message             TEXT NOT NULL
+  status              VARCHAR(20) NOT NULL  -- 'sent','failed','delivered'
+  provider_message_id VARCHAR(100) NULL
+  created_at          TIMESTAMPTZ DEFAULT NOW()
+
+Supports NFR-017 (SMS send attempts logged) and AR-040 (debugging).
+
+4.20 transaction_log
+------------------------------------------------------------
+  id        SERIAL PRIMARY KEY
+  timestamp TIMESTAMPTZ DEFAULT NOW()
+  actor     VARCHAR(100) NULL
+  action    VARCHAR(100) NOT NULL
+  details   JSONB NULL
+  order_id  INTEGER NULL REFERENCES orders(id)
+
+Supports NFR-016 (all financial transactions + status transitions
+logged, retained >= 1 year).
+
+4.21 otp_codes
+------------------------------------------------------------
+  id         SERIAL PRIMARY KEY
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+  code       VARCHAR(6) NOT NULL
+  expires_at TIMESTAMPTZ NOT NULL   -- 5-minute window
+  attempts   INTEGER NOT NULL DEFAULT 0   -- Brute-force protection
+  created_at TIMESTAMPTZ DEFAULT NOW()
+
+Index: INDEX(user_id)
+
+Logic notes:
+  - Generated on login request for phone-only (no password) accounts
+  - Validated: WHERE user_id=X AND code=Y AND expires_at > NOW()
+  - After 3 failed attempts, delete code + force new request
+  - Rate-limit generation: check otp_codes for existing row from
+    same user_id within cooldown window (60 seconds) using created_at
+  - On success: phone_verified=TRUE if not already, user logged in
+
+
+5. KEY DESIGN DECISIONS (Cross-Referenced to SRS)
+------------------------------------------------------------
+ID    Decision                        Resolution
+------------------------------------------------------------
+D1    Guest browsing depth            Full open browsing (prices + farmers visible)
+D2    Guest checkout                  Deferred account creation via M-Pesa phone
+D3    Multi-farmer carts              Single-farmer-per-order (asset-light)
+D4    Farmer verification             Hard verification (verify-before-list), phone-call-based
+D5    Order response SLA              30-min auto-cancel (T+15 escalation, T+30 cancel)
+D6    Pickup/delivery coordination    Hybrid: farmer triggers, platform assigns courier
+D7    Payout trigger                  Automatic per-order on delivery confirmation
+D8    Courier system access           SMS-based status link (no login, single token)
+D9    Admin permission model          Two-tier: Owner (full) / Operator (daily ops)
+
+All decisions are traceable to specific SRS requirements.
+Marketing messaging (trust-first, WhatsApp + community activation
++ short-form video) aligns with the trust-heavy architecture.
+
+
+6. SECURITY & COMPLIANCE
+------------------------------------------------------------
+- HTTPS via Nginx (NFR-002) — platform-wide, all actors.
+- Password hashing via Django's default (PBKDF2 + salt).
+- Session expiry via Django's session framework.
+- Courier status links: single-use-scoped token with 6-hour
+  expiry (NFR-001). Transitions idempotent against status.
+- M-Pesa callback: signature verification mandatory before
+  any DB write (prevents fake payment confirmations).
+- Database access: no direct admin SQL. Backend service only.
+- Secrets in .env file outside codebase (python-dotenv).
+- Kenya Data Protection Act compliance for all personal data
+  (phone, location, photos) from both actors (NFR-012).
+- Terms of Service and Privacy Policy on every page footer.
+- Marketing opt-in enforced for consumer communications.
+
+
+7. DEPLOYMENT ARCHITECTURE (Production)
+------------------------------------------------------------
+                    ┌──────────────┐
+                    │    USER      │
+                    └──────┬───────┘
+                           │ HTTPS
+              ┌────────────▼────────────┐
+              │         Nginx            │
+              │  (reverse proxy + static)│
+              └────────────┬────────────┘
+                           │ HTTP :8000
+              ┌────────────▼────────────┐
+              │       Gunicorn          │
+              │   (Django WSGI app)     │
+              └────────────┬────────────┘
+                           │
+         ┌─────────────────┼─────────────────┐
+         │                 │                 │
+  ┌──────▼──────┐  ┌───────▼───────┐  ┌──────▼──────┐
+  │  PostgreSQL │  │  Africa's     │  │  Safaricom   │
+  │  (managed)  │  │  Talking API  │  │  Daraja API  │
+  └──────┬──────┘  └───────────────┘  └──────────────┘
+         │
+  ┌──────▼──────┐
+  │ S3-compat   │
+  │ media store │
+  └─────────────┘
+
+Components:
+  - Single Debian server (Nginx + Gunicorn + systemd)
+  - Managed PostgreSQL (automatic backups, NFR-014)
+  - S3-compatible object storage for media (R2 or B2)
+  - External monitoring: UptimeRobot pings /health
+  - Cron jobs on the server for scheduled tasks
+
+============================================================
+END OF DESIGN DOCUMENT
+============================================================
