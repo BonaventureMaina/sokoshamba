@@ -1,12 +1,25 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 from marketplace.models import Cart, CartItem
 from marketplace.views import get_or_create_cart
 from accounts.models import User
 from .models import Order, OrderItem, MpesaPayment
+
+
+def get_verified_farmer(user):
+    if user.is_authenticated and user.role == 'farmer':
+        try:
+            profile = user.farmer_profile
+            if profile.verification_status == 'verified' and profile.is_active:
+                return profile
+        except Exception:
+            pass
+    return None
 
 
 def checkout(request):
@@ -55,7 +68,6 @@ def mpesa_callback(request):
     if not checkout_request_id or not phone:
         return JsonResponse({'success': False, 'message': 'Invalid callback data.'}, status=400)
 
-    # Create or get user
     user, created = User.objects.get_or_create(
         phone=phone,
         defaults={'role': 'consumer', 'phone_verified': True}
@@ -64,8 +76,7 @@ def mpesa_callback(request):
         user.set_unusable_password()
         user.save()
 
-    # --- Cart Merging Fix ---
-    # Get the current session-based cart (guest cart with items)
+    # Cart merging
     session_key = request.session.session_key
     guest_cart = None
     if session_key:
@@ -74,29 +85,21 @@ def mpesa_callback(request):
         except Cart.DoesNotExist:
             pass
 
-    # Get or create the user's cart
     user_cart, _ = Cart.objects.get_or_create(user=user)
 
-    # If there's a guest cart with items, transfer them to the user cart
     if guest_cart and guest_cart.items.exists():
         for item in guest_cart.items.all():
-            # Check if user cart already has this product
             existing = CartItem.objects.filter(cart=user_cart, product=item.product).first()
             if existing:
-                existing.quantity = item.quantity  # Replace with guest quantity
+                existing.quantity = item.quantity
                 existing.save()
             else:
-                # Move item to user cart
                 item.cart = user_cart
                 item.save()
-        # Delete the now-empty guest cart
         guest_cart.delete()
-    # --- End Cart Merging ---
 
-    # Log the user in so they own the order
     login(request, user)
 
-    # Retrieve the user's cart (now contains merged items)
     cart = user_cart
     items = cart.items.select_related('product__farmer').all()
     if not items:
@@ -146,10 +149,8 @@ def mpesa_callback(request):
         mpesa_receipt_number='SIM' + str(order.id),
     )
 
-    # Clear the cart
     cart.items.all().delete()
 
-    # Clean up session
     if 'pending_phone' in request.session:
         del request.session['pending_phone']
 
@@ -158,6 +159,7 @@ def mpesa_callback(request):
         'order_id': order.id,
         'message': 'Payment successful. Your order has been placed.',
     })
+
 
 def order_list(request):
     if not request.user.is_authenticated:
@@ -170,6 +172,52 @@ def order_detail(request, order_id):
     if not request.user.is_authenticated:
         return redirect('login')
     order = get_object_or_404(request.user.orders, id=order_id)
-    # Prefetch related
     items = order.items.all()
     return render(request, 'order_detail.html', {'order': order, 'items': items})
+
+
+@login_required
+def farmer_order_list(request):
+    farmer = get_verified_farmer(request.user)
+    if not farmer:
+        return HttpResponseForbidden("Access denied.")
+
+    orders = farmer.orders.select_related('consumer').order_by('-created_at')
+    return render(request, 'farmer_order_list.html', {'orders': orders, 'farmer': farmer})
+
+
+@login_required
+def farmer_order_detail(request, order_id):
+    farmer = get_verified_farmer(request.user)
+    if not farmer:
+        return HttpResponseForbidden("Access denied.")
+
+    order = get_object_or_404(farmer.orders, id=order_id)
+    items = order.items.all()
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'accept' and order.status == 'pending':
+            order.status = 'confirmed'
+            order.confirmed_at = timezone.now()
+            order.save()
+        elif action == 'decline' and order.status == 'pending':
+            order.status = 'farmer_declined'
+            order.farmer_declined_at = timezone.now()
+            order.decline_reason = request.POST.get('decline_reason', '')
+            order.save()
+        elif action == 'ready' and order.status == 'confirmed':
+            order.status = 'ready_for_pickup'
+            order.ready_at = timezone.now()
+            order.save()
+        elif action == 'request_pickup' and order.status == 'ready_for_pickup':
+            order.status = 'pickup_requested'
+            order.pickup_requested_at = timezone.now()
+            order.save()
+        return redirect('farmer_order_detail', order_id=order.id)
+
+    return render(request, 'farmer_order_detail.html', {
+        'order': order,
+        'items': items,
+        'farmer': farmer,
+    })
