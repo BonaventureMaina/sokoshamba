@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SokoShamba Courier</title>
+    <style>
+        body {
+            font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #f8f9fa;
+            color: #2c3e50;
+            margin: 0;
+            padding: 1rem;
+            text-align: center;
+        }
+        .container {
+            max-width: 400px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        p { margin-bottom: 1rem; color: #6c757d; }
+        button {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-bottom: 0.75rem;
+        }
+        .pickup { background-color: #2d6a4f; color: white; }
+        .deliver { background-color: #ff7b00; color: white; }
+        .done { background-color: #d4edda; color: #155724; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Delivery Status</h1>
+        <p><strong>Order #{{ order.id }}</strong></p>
+        <p>Rider: {{ rider.name }} · {{ rider.phone }}</p>
+        <p>Current: <strong>{{ assignment.get_status_display }}</strong></p>
+
+        {% if assignment.status == 'assigned' %}
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="picked_up">
+            <button type="submit" class="pickup">Mark as Picked Up</button>
+        </form>
+        {% elif assignment.status == 'picked_up' %}
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delivered">
+            <button type="submit" class="deliver">Mark as Delivered</button>
+        </form>
+        {% elif assignment.status == 'delivered' %}
+        <div class="done">✅ Order delivered successfully.</div>
+        {% endif %}
+    </div>
+</body>
+</html>

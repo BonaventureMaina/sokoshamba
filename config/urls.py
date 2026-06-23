@@ -6,6 +6,7 @@ from orders.views import (
     order_list, order_detail,
     farmer_order_list, farmer_order_detail,
 )
+from logistics.views import courier_status
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -23,4 +24,5 @@ urlpatterns = [
     path('farmer/orders/', farmer_order_list, name='farmer_order_list'),
     path('farmer/orders/<int:order_id>/', farmer_order_detail, name='farmer_order_detail'),
     path('', include('accounts.urls')),
+    path('courier/<str:token>/', courier_status, name='courier_status'),
 ]
