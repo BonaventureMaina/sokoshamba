@@ -39,6 +39,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
 
         header a {
@@ -51,9 +53,20 @@
             font-weight: 700;
         }
 
+        nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
         nav a {
-            margin-left: 1rem;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        nav a:hover {
+            background-color: rgba(255,255,255,0.15);
         }
 
         main {
@@ -82,12 +95,20 @@
     <header>
         <a href="/" class="logo">SokoShamba</a>
         <nav>
-            <a href="/">Home</a>
             {% if user.is_authenticated %}
-                <a href="/cart/">Cart</a>
-                <a href="/orders/">Orders</a>
+                {% if user.role == 'farmer' %}
+                    <a href="/farmer/products/">My Products</a>
+                    <a href="/farmer/orders/">Orders</a>
+                    <a href="/farmer/earnings/">Earnings</a>
+                {% else %}
+                    <a href="/products/">Browse</a>
+                    <a href="/cart/">Cart</a>
+                    <a href="/orders/">My Orders</a>
+                {% endif %}
                 <a href="/logout/">Logout</a>
             {% else %}
+                <a href="/products/">Browse</a>
+                <a href="/cart/">Cart</a>
                 <a href="/login/">Login</a>
             {% endif %}
         </nav>

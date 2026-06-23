@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Earnings</h1>
+<p style="color: var(--slate-gray); margin-bottom: 1.5rem;">Track your payouts from SokoShamba</p>
+
+<!-- Summary Cards -->
+<div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+    <div style="flex: 1; background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
+        <p style="font-size: 0.85rem; color: var(--slate-gray); margin-bottom: 0.25rem;">Total Earned</p>
+        <p style="font-size: 1.5rem; font-weight: 700; color: var(--forest-green);">KSh {{ total_earned|floatformat:2 }}</p>
+    </div>
+    <div style="flex: 1; background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
+        <p style="font-size: 0.85rem; color: var(--slate-gray); margin-bottom: 0.25rem;">Pending</p>
+        <p style="font-size: 1.5rem; font-weight: 700; color: var(--sunrise-orange);">KSh {{ pending_earned|floatformat:2 }}</p>
+    </div>
+</div>
+
+<!-- Payout History -->
+<h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Payout History</h2>
+
+{% if payouts %}
+<div style="display: flex; flex-direction: column; gap: 0.75rem;">
+    {% for payout in payouts %}
+    <div style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <p style="font-weight: 600; font-size: 0.95rem;">Order #{{ payout.order.id }}</p>
+            <p style="font-size: 0.8rem; color: var(--slate-gray);">{{ payout.created_at|date:"M d, Y" }}</p>
+        </div>
+        <div style="text-align: right;">
+            <p style="font-weight: 700; font-size: 1rem; color: var(--forest-green);">KSh {{ payout.amount|floatformat:2 }}</p>
+            <span style="font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 1rem; font-weight: 600;
+                {% if payout.status == 'completed' %}background: #d4edda; color: #155724;
+                {% elif payout.status == 'pending' %}background: #fff3cd; color: #856404;
+                {% elif payout.status == 'failed' %}background: #f8d7da; color: #721c24;
+                {% else %}background: #e9ecef; color: #6c757d;{% endif %}">
+                {{ payout.get_status_display }}
+            </span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div style="text-align: center; padding: 3rem 1rem;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">💰</div>
+    <h2 style="font-size: 1.25rem; color: var(--charcoal); margin-bottom: 0.5rem;">No payouts yet</h2>
+    <p style="color: var(--slate-gray);">Earnings from delivered orders will appear here.</p>
+</div>
+{% endif %}
+{% endblock %}

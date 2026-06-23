@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<a href="/farmer/products/" style="display: inline-block; margin-bottom: 1rem; color: var(--forest-green); text-decoration: none; font-size: 0.9rem; font-weight: 600;">← Back to My Products</a>
+
+<h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem;">
+    {% if product %}Edit Product{% else %}Add New Product{% endif %}
+</h1>
+
+<div style="background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto;">
+    {% if error %}
+    <div style="background: #f8d7da; color: #721c24; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; font-size: 0.9rem;">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label for="name" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Product Name</label>
+        <input type="text" id="name" name="name" value="{{ product.name|default:'' }}" required
+               style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 1rem; margin-bottom: 1rem; box-sizing: border-box;">
+
+        <label for="category" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Category</label>
+        <select id="category" name="category" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 1rem; margin-bottom: 1rem; box-sizing: border-box;">
+            <option value="">-- Select --</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if product and product.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="unit" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Unit</label>
+        <input type="text" id="unit" name="unit" value="{{ product.unit|default:'' }}" placeholder="e.g. kg, bunch, piece" required
+               style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 1rem; margin-bottom: 1rem; box-sizing: border-box;">
+
+        <div style="display: flex; gap: 1rem;">
+            <div style="flex: 1;">
+                <label for="price" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Price (KSh)</label>
+                <input type="number" id="price" name="price" value="{{ product.price|default:'' }}" step="0.01" min="0" required
+                       style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 1rem; margin-bottom: 1rem; box-sizing: border-box;">
+            </div>
+            <div style="flex: 1;">
+                <label for="quantity" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Available Quantity</label>
+                <input type="number" id="quantity" name="quantity" value="{{ product.available_quantity|default:'' }}" step="0.01" min="0" required
+                       style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 1rem; margin-bottom: 1rem; box-sizing: border-box;">
+            </div>
+        </div>
+
+        <label for="description" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Description (optional)</label>
+        <textarea id="description" name="description" rows="3"
+                  style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 1rem; margin-bottom: 1rem; box-sizing: border-box;">{{ product.description|default:'' }}</textarea>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="checkbox" name="is_organic" {% if product and product.is_organic %}checked{% endif %} style="width: 20px; height: 20px;">
+                <span style="font-weight: 600;">This product is organic</span>
+            </label>
+        </div>
+
+        {% if product %}
+        <div style="margin-bottom: 1rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="checkbox" name="is_active" {% if product.is_active %}checked{% endif %} style="width: 20px; height: 20px;">
+                <span style="font-weight: 600;">Active (visible to consumers)</span>
+            </label>
+        </div>
+        {% endif %}
+
+        <button type="submit" style="width: 100%; padding: 1rem; background-color: var(--forest-green); color: white; border: none; border-radius: 4px; font-size: 1.1rem; font-weight: 700; cursor: pointer;">
+            {% if product %}Save Changes{% else %}Add Product{% endif %}
+        </button>
+    </form>
+</div>
+{% endblock %}

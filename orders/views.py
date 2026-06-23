@@ -278,3 +278,20 @@ def farmer_order_detail(request, order_id):
         'items': items,
         'farmer': farmer,
     })
+
+@login_required
+def farmer_earnings(request):
+    farmer = get_verified_farmer(request.user)
+    if not farmer:
+        return HttpResponseForbidden("Access denied.")
+
+    payouts = farmer.payouts.select_related('order').order_by('-created_at')
+    total_earned = sum(p.amount for p in payouts if p.status == 'completed')
+    pending_earned = sum(p.amount for p in payouts if p.status == 'pending')
+
+    return render(request, 'farmer_earnings.html', {
+        'farmer': farmer,
+        'payouts': payouts,
+        'total_earned': total_earned,
+        'pending_earned': pending_earned,
+    })
