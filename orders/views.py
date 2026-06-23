@@ -6,10 +6,14 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from marketplace.models import Cart, CartItem
+from django.conf import settings
+from marketplace.models import Cart, CartItem, PendingCheckout
 from marketplace.views import get_or_create_cart
 from accounts.models import User
 from .models import Order, OrderItem, MpesaPayment
+from .mpesa_service import initiate_stk_push, verify_callback_signature
+import os
+
 
 
 def get_verified_farmer(user):
@@ -52,23 +56,91 @@ def initiate_payment(request):
     if not phone:
         return JsonResponse({'success': False, 'message': 'Phone number is required.'}, status=400)
 
+    cart = get_or_create_cart(request)
+    items = cart.items.select_related('product__farmer').all()
+    if not items:
+        return JsonResponse({'success': False, 'message': 'Cart empty.'}, status=400)
+
+    subtotal = sum(item.product.price * item.quantity for item in items)
+    delivery_fee = 150
+    total = subtotal + delivery_fee
+
+    # Store essential data in session so the callback can reconstruct the order
     request.session['pending_phone'] = phone
+    request.session['pending_total'] = float(total)
+
+    # Build the full callback URL (must be publicly reachable; for sandbox, use localhost or a tunnel)
+    ngrok_base = os.environ.get('NGROK_URL', '')
+    callback_url = f'{ngrok_base}/webhooks/mpesa/callback/' if ngrok_base else request.build_absolute_uri('/webhooks/mpesa/callback/')
+
+    try:
+        result = initiate_stk_push(
+            phone=phone,
+            amount=int(total),
+            account_reference=f'SokoShamba',
+            callback_url=callback_url,
+        )
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'M-Pesa request failed: {str(e)}'}, status=500)
+
+    # Store the checkout request ID so we can match it later
+    request.session['checkout_request_id'] = result['CheckoutRequestID']
+    # Store pending checkout for the callback (which has no session)
+    PendingCheckout.objects.create(
+        checkout_request_id=result['CheckoutRequestID'],
+        phone=phone,
+        cart_id=cart.id,
+        total=total,
+    )
+
     return JsonResponse({
         'success': True,
-        'message': 'Check your phone and enter your M-Pesa PIN.',
-        'checkout_request_id': 'simulated_' + phone,
+        'message': 'Check your phone and enter your M‑Pesa PIN.',
+        'checkout_request_id': result['CheckoutRequestID'],
     })
 
 
 @csrf_exempt
 @require_POST
 def mpesa_callback(request):
-    checkout_request_id = request.POST.get('checkout_request_id', '')
-    phone = request.session.get('pending_phone', '')
+    """
+    Real Daraja callback. Safaricom sends JSON with the payment result.
+    We extract the status, amount, phone, and checkout request ID.
+    """
+    import json
+    try:
+        callback_data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid JSON.'}, status=400)
 
-    if not checkout_request_id or not phone:
-        return JsonResponse({'success': False, 'message': 'Invalid callback data.'}, status=400)
+    # Verify signature (optional but recommended)
+    if not verify_callback_signature(request):
+        return JsonResponse({'success': False, 'message': 'Invalid signature.'}, status=403)
 
+    # Extract relevant fields
+    stk_callback = callback_data.get('Body', {}).get('stkCallback', {})
+    result_code = stk_callback.get('ResultCode')
+    result_desc = stk_callback.get('ResultDesc', '')
+    checkout_request_id = stk_callback.get('CheckoutRequestID')
+    amount = stk_callback.get('CallbackMetadata', {}).get('Item', [{}])
+    # Actually, the metadata items are a list of dicts: [{'Name': 'Amount', 'Value': 100}, ...]
+    # We'll extract phone and receipt number below
+    metadata_items = stk_callback.get('CallbackMetadata', {}).get('Item', [])
+    metadata = {}
+    for item in metadata_items:
+        metadata[item['Name']] = item.get('Value')
+
+    phone = metadata.get('PhoneNumber', request.session.get('pending_phone', ''))
+    mpesa_receipt = metadata.get('MpesaReceiptNumber', '')
+    payment_amount = metadata.get('Amount', 0)
+
+    if result_code != 0:
+        # Payment failed
+        # We could create a failed payment record, but for simplicity just log and respond
+        return JsonResponse({'success': False, 'message': result_desc}, status=200)
+
+    # Payment succeeded – create the order exactly like the simulated version did
+    # Get or create user
     user, created = User.objects.get_or_create(
         phone=phone,
         defaults={'role': 'consumer', 'phone_verified': True}
@@ -77,6 +149,7 @@ def mpesa_callback(request):
         user.set_unusable_password()
         user.save()
 
+    # Cart merging
     session_key = request.session.session_key
     guest_cart = None
     if session_key:
@@ -103,7 +176,7 @@ def mpesa_callback(request):
     cart = user_cart
     items = cart.items.select_related('product__farmer').all()
     if not items:
-        return JsonResponse({'success': False, 'message': 'Cart empty.'})
+        return JsonResponse({'success': False, 'message': 'Cart empty.'}, status=400)
 
     farmer = items[0].product.farmer
     subtotal = sum(item.product.price * item.quantity for item in items)
@@ -141,18 +214,20 @@ def mpesa_callback(request):
 
     MpesaPayment.objects.create(
         order=order,
-        merchant_request_id='sim_merchant_' + str(order.id),
+        merchant_request_id='real_' + checkout_request_id,
         checkout_request_id=checkout_request_id,
         amount=total,
         phone_number=phone,
         status='completed',
-        mpesa_receipt_number='SIM' + str(order.id),
+        mpesa_receipt_number=mpesa_receipt,
     )
 
     cart.items.all().delete()
 
-    if 'pending_phone' in request.session:
-        del request.session['pending_phone']
+    # Clean up session
+    for key in ['pending_phone', 'pending_total', 'checkout_request_id']:
+        if key in request.session:
+            del request.session[key]
 
     return JsonResponse({
         'success': True,

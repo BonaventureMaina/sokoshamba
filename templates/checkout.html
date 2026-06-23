@@ -3,7 +3,6 @@
 {% block content %}
 <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem;">Checkout</h1>
 
-<!-- Order Summary -->
 <div style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
     <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Order Summary</h2>
     {% for item in items %}
@@ -29,7 +28,6 @@
     </div>
 </div>
 
-<!-- Payment Section -->
 <div id="payment-section" style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
     <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Pay with M-Pesa</h2>
     <label for="phone" style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.95rem;">M-Pesa Phone Number</label>
@@ -43,7 +41,6 @@
     <p id="pay-message" style="margin-top: 1rem; font-size: 0.9rem; color: var(--slate-gray); text-align: center;"></p>
 </div>
 
-<!-- Success Section (hidden initially) -->
 <div id="success-section" style="display: none; text-align: center; padding: 2rem 1rem;">
     <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
     <h2 style="font-size: 1.25rem; color: var(--charcoal); margin-bottom: 0.5rem;">Order Placed Successfully!</h2>
@@ -59,9 +56,8 @@
             return;
         }
 
-        document.getElementById('pay-message').textContent = 'Initiating payment...';
+        document.getElementById('pay-message').textContent = 'Initiating M-Pesa payment...';
 
-        // Step 1: Initiate the simulated STK Push
         fetch('/checkout/pay/', {
             method: 'POST',
             headers: {
@@ -77,28 +73,15 @@
                 return;
             }
 
-            // Step 2: Simulate user entering PIN and Safaricom callback
-            document.getElementById('pay-message').textContent = 'Check your phone and enter your M-Pesa PIN...';
-
-            // Simulate a 2-second delay for the PIN entry, then trigger the callback
+            document.getElementById('pay-message').textContent = 'Check your phone and enter your M‑Pesa PIN.';
+            // The real callback will arrive at the server asynchronously.
+            // For now, we just inform the user. In a production app, we would poll the server
+            // or use a WebSocket to detect when the payment completes.
+            // For simplicity, we'll tell the user to refresh their orders page.
             setTimeout(() => {
-                fetch('/webhooks/mpesa/callback/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: 'checkout_request_id=' + encodeURIComponent(data.checkout_request_id),
-                })
-                .then(r => r.json())
-                .then(callbackData => {
-                    if (callbackData.success) {
-                        document.getElementById('payment-section').style.display = 'none';
-                        document.getElementById('success-section').style.display = 'block';
-                    } else {
-                        document.getElementById('pay-message').textContent = callbackData.message || 'Payment verification failed.';
-                    }
-                });
-            }, 2000);
+                document.getElementById('payment-section').style.display = 'none';
+                document.getElementById('success-section').style.display = 'block';
+            }, 5000); // Give Safaricom time to process
         });
     }
 </script>

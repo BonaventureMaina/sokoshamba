@@ -107,3 +107,10 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
+
+class PendingCheckout(models.Model):
+    checkout_request_id = models.CharField(max_length=50, unique=True)
+    phone = models.CharField(max_length=15)
+    cart_id = models.IntegerField()
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
