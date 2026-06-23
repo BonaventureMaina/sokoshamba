@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Avg
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from .models import Category, Product, Cart, CartItem
+from reviews.models import Review
 
 
 def home(request):
@@ -11,9 +13,31 @@ def home(request):
 def product_list(request):
     categories = Category.objects.filter(is_active=True)
     category_id = request.GET.get('category')
-    products = Product.objects.filter(is_active=True, farmer__is_active=True, farmer__verification_status='verified').select_related('farmer__user').prefetch_related('images')
+    products = Product.objects.filter(
+        is_active=True,
+        farmer__is_active=True,
+        farmer__verification_status='verified'
+    ).select_related('farmer__user').prefetch_related('images')
+    # Annotate average rating per farmer
+    products = products.annotate(avg_rating=Avg('farmer__reviews__rating'))
     if category_id:
         products = products.filter(category_id=category_id)
+    # Pre-compute star display
+    for product in products:
+        avg = product.avg_rating
+        if avg and avg > 0:
+            filled = int(round(avg))
+            product.star_display = '★' * filled + '☆' * (5 - filled)
+        else:
+            product.star_display = '☆' * 5
+    # Pre-compute star display
+    for product in products:
+        avg = product.avg_rating
+        if avg and avg > 0:
+            filled = int(round(avg))
+            product.star_display = '★' * filled + '☆' * (5 - filled)
+        else:
+            product.star_display = '☆' * 5
     context = {
         'categories': categories,
         'products': products,
@@ -32,7 +56,9 @@ def product_detail(request, product_id):
     if not product:
         from django.http import Http404
         raise Http404("Product not found")
-    return render(request, 'product_detail.html', {'product': product})
+    reviews = Review.objects.filter(farmer=product.farmer).select_related('consumer').order_by('-created_at')[:5]
+    context = {'product': product, 'reviews': reviews}
+    return render(request, 'product_detail.html', context)
 
 
 def get_or_create_cart(request):

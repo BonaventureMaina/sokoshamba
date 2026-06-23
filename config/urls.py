@@ -12,6 +12,7 @@ from orders.views import (
     farmer_earnings,
 )
 from logistics.views import courier_status
+from reviews.views import submit_review
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -34,4 +35,5 @@ urlpatterns = [
     path('farmer/products/add/', farmer_product_add, name='farmer_product_add'),
     path('farmer/products/edit/<int:product_id>/', farmer_product_edit, name='farmer_product_edit'),
     path('farmer/earnings/', farmer_earnings, name='farmer_earnings'),
+    path('order/<int:order_id>/review/', submit_review, name='submit_review'),
 ]
