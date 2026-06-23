@@ -158,3 +158,18 @@ def mpesa_callback(request):
         'order_id': order.id,
         'message': 'Payment successful. Your order has been placed.',
     })
+
+def order_list(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    orders = request.user.orders.select_related('farmer').order_by('-created_at')
+    return render(request, 'order_list.html', {'orders': orders})
+
+
+def order_detail(request, order_id):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    order = get_object_or_404(request.user.orders, id=order_id)
+    # Prefetch related
+    items = order.items.all()
+    return render(request, 'order_detail.html', {'order': order, 'items': items})

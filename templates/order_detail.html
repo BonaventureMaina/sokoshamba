@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<a href="/orders/" style="display: inline-block; margin-bottom: 1rem; color: var(--forest-green); text-decoration: none; font-size: 0.9rem; font-weight: 600;">← Back to Orders</a>
+
+<h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Order #{{ order.id }}</h1>
+<p style="color: var(--slate-gray); margin-bottom: 1.5rem;">Placed {{ order.created_at|date:"M d, Y" }} at {{ order.created_at|date:"g:i A" }}</p>
+
+<!-- Status Badge -->
+<div style="background: white; border-radius: 8px; padding: 1.5rem 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem; text-align: center;">
+    {% if order.status == 'pending' %}
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⏳</div>
+        <p style="font-weight: 600; font-size: 1.1rem; color: #856404;">Awaiting Farmer Confirmation</p>
+        <p style="font-size: 0.85rem; color: var(--slate-gray); margin-top: 0.25rem;">The farmer has 30 minutes to respond.</p>
+    {% elif order.status == 'confirmed' or order.status == 'preparing' %}
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🧑‍🌾</div>
+        <p style="font-weight: 600; font-size: 1.1rem; color: var(--forest-green);">Farmer is Preparing Your Order</p>
+    {% elif order.status == 'ready_for_pickup' or order.status == 'pickup_requested' or order.status == 'courier_assigned' %}
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🏍️</div>
+        <p style="font-weight: 600; font-size: 1.1rem; color: var(--forest-green);">Courier Assignment in Progress</p>
+    {% elif order.status == 'in_transit' %}
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📦</div>
+        <p style="font-weight: 600; font-size: 1.1rem; color: var(--forest-green);">Your Order is on the Way!</p>
+    {% elif order.status == 'delivered' %}
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">✅</div>
+        <p style="font-weight: 600; font-size: 1.1rem; color: #155724;">Delivered Successfully!</p>
+    {% elif order.status == 'auto_cancelled' %}
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⏰</div>
+        <p style="font-weight: 600; font-size: 1.1rem; color: #721c24;">Cancelled — Farmer Did Not Respond</p>
+    {% elif order.status == 'farmer_declined' %}
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">❌</div>
+        <p style="font-weight: 600; font-size: 1.1rem; color: #721c24;">Cancelled by Farmer</p>
+        {% if order.decline_reason %}<p style="font-size: 0.85rem; color: var(--slate-gray);">Reason: {{ order.decline_reason }}</p>{% endif %}
+    {% elif order.status == 'consumer_cancelled' %}
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">❌</div>
+        <p style="font-weight: 600; font-size: 1.1rem; color: #721c24;">Cancelled by You</p>
+    {% endif %}
+</div>
+
+<!-- Order Items -->
+<div style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem;">
+    <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Items</h2>
+    {% for item in items %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border);">
+        <div>
+            <span style="font-weight: 600; font-size: 0.95rem;">{{ item.product_name }}</span>
+            <span style="color: var(--slate-gray); font-size: 0.85rem;">x{{ item.quantity|floatformat:"-2" }} {{ item.unit }}</span>
+        </div>
+        <span style="font-weight: 600;">KSh {{ item.price|floatformat:2 }}</span>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Farmer Info -->
+<div style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem;">
+    <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">Farmer</h2>
+    <p style="font-size: 0.95rem; font-weight: 600;">{{ order.farmer.farm_name }}</p>
+    <p style="font-size: 0.85rem; color: var(--slate-gray);">{{ order.farmer.county }}</p>
+</div>
+
+<!-- Price Breakdown -->
+<div style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Price</h2>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.9rem;">
+        <span style="color: var(--slate-gray);">Subtotal</span>
+        <span>KSh {{ order.subtotal|floatformat:2 }}</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.9rem;">
+        <span style="color: var(--slate-gray);">Delivery Fee</span>
+        <span>KSh {{ order.delivery_fee|floatformat:2 }}</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--color-border); padding-top: 0.5rem; margin-top: 0.5rem; font-weight: 700; font-size: 1.1rem;">
+        <span>Total</span>
+        <span style="color: var(--forest-green);">KSh {{ order.total|floatformat:2 }}</span>
+    </div>
+</div>
+{% endblock %}
