@@ -44,16 +44,23 @@
 <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
     <label for="quantity" style="font-weight: 600; font-size: 0.95rem;">Quantity:</label>
     <div style="display: flex; align-items: center; border: 1px solid var(--color-border); border-radius: 4px; overflow: hidden;">
-        <button type="button" onclick="changeQty(-1)" style="width: 48px; height: 48px; border: none; background: #f1f3f5; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">−</button>
+        <button type="button" onclick="changeQty(-1)" style="width: 48px; height: 48px; border: none; background: #f1f3f5; font-size: 1.25rem; cursor: pointer;">−</button>
         <input type="number" id="quantity" name="quantity" value="1" min="1" step="1" style="width: 60px; height: 48px; border: none; text-align: center; font-size: 1rem; font-weight: 600; -moz-appearance: textfield;" onchange="updateQty()">
-        <button type="button" onclick="changeQty(1)" style="width: 48px; height: 48px; border: none; background: #f1f3f5; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">+</button>
+        <button type="button" onclick="changeQty(1)" style="width: 48px; height: 48px; border: none; background: #f1f3f5; font-size: 1.25rem; cursor: pointer;">+</button>
     </div>
 </div>
 
-<!-- Add to Cart -->
-<button onclick="addToCart({{ product.id }})" style="width: 100%; padding: 1rem; background-color: var(--sunrise-orange); color: white; border: none; border-radius: 4px; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-bottom: 2rem;">
-    Add to Cart — KSh <span id="totalPrice">{{ product.price }}</span>
-</button>
+<!-- Add to Cart Button (dynamic state) -->
+<div id="add-to-cart-container" style="margin-bottom: 2rem;">
+    <button id="add-to-cart-btn" onclick="addToCart({{ product.id }})" style="width: 100%; padding: 1rem; background-color: var(--sunrise-orange); color: white; border: none; border-radius: 4px; font-size: 1.1rem; font-weight: 700; cursor: pointer;">
+        Add to Cart — KSh <span id="totalPrice">{{ product.price }}</span>
+    </button>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: var(--charcoal); color: white; padding: 0.75rem 1.5rem; border-radius: 2rem; font-size: 0.95rem; font-weight: 600; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; pointer-events: none;">
+    <span id="toast-msg"></span>
+</div>
 
 <!-- Description -->
 {% if product.description %}
@@ -84,6 +91,10 @@
     const pricePerUnit = {{ product.price }};
     const qtyInput = document.getElementById('quantity');
     const totalSpan = document.getElementById('totalPrice');
+    const addBtn = document.getElementById('add-to-cart-btn');
+    const container = document.getElementById('add-to-cart-container');
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-msg');
 
     function updateQty() {
         let qty = parseInt(qtyInput.value) || 1;
@@ -100,8 +111,25 @@
         updateQty();
     }
 
+    function showToast(message, type = 'success') {
+        toastMsg.textContent = message;
+        toast.style.opacity = '1';
+        if (type === 'error') {
+            toast.style.backgroundColor = '#dc3545';
+        } else {
+            toast.style.backgroundColor = '#2c3e50';
+        }
+        clearTimeout(toast.hideTimeout);
+        toast.hideTimeout = setTimeout(() => {
+            toast.style.opacity = '0';
+        }, 2500);
+    }
+
     function addToCart(productId) {
         const qty = qtyInput.value;
+        addBtn.disabled = true;
+        addBtn.textContent = 'Adding…';
+
         fetch('/cart/add/', {
             method: 'POST',
             headers: {
@@ -113,10 +141,23 @@
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                alert('Added to cart!');
+                // Replace button with a "View Cart" link
+                container.innerHTML = `
+                    <a href="/cart/" style="display: block; width: 100%; padding: 1rem; background-color: var(--forest-green); color: white; text-decoration: none; border-radius: 4px; font-size: 1.1rem; font-weight: 700; text-align: center;">
+                        ✅ Added — View Cart
+                    </a>
+                `;
+                showToast('Added to cart!');
             } else {
-                alert(data.message || 'Could not add to cart.');
+                showToast(data.message || 'Could not add to cart.', 'error');
+                addBtn.disabled = false;
+                addBtn.textContent = 'Add to Cart — KSh ' + (pricePerUnit * qty).toFixed(2);
             }
+        })
+        .catch(() => {
+            showToast('Network error. Please try again.', 'error');
+            addBtn.disabled = false;
+            addBtn.textContent = 'Add to Cart — KSh ' + (pricePerUnit * qty).toFixed(2);
         });
     }
 
