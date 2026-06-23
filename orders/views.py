@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.http import require_POST
@@ -76,7 +77,6 @@ def mpesa_callback(request):
         user.set_unusable_password()
         user.save()
 
-    # Cart merging
     session_key = request.session.session_key
     guest_cart = None
     if session_key:
@@ -126,7 +126,7 @@ def mpesa_callback(request):
         delivery_address_snapshot=address_snapshot,
         consumer_phone_at_order=phone,
         status='pending',
-        auto_cancel_at=None,
+        auto_cancel_at=timezone.now() + timedelta(minutes=30),
     )
 
     for item in items:
