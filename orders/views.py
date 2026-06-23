@@ -15,13 +15,12 @@ def checkout(request):
     if not items:
         return redirect('cart')
 
-    # Pre-calculate subtotal
     subtotal = 0
     for item in items:
         item.line_total = item.product.price * item.quantity
         subtotal += item.line_total
 
-    delivery_fee = 150  # fixed for now
+    delivery_fee = 150
     total = subtotal + delivery_fee
 
     context = {
@@ -35,18 +34,14 @@ def checkout(request):
 
 @require_POST
 def initiate_payment(request):
-    """Simulate initiating an M‑Pesa STK Push and return a fake checkout request ID."""
     phone = request.POST.get('phone')
     if not phone:
         return JsonResponse({'success': False, 'message': 'Phone number is required.'}, status=400)
 
-    # In production, this would call the Daraja API. Here we just store a placeholder.
-    # We'll store the phone in session so the callback can use it.
     request.session['pending_phone'] = phone
-
     return JsonResponse({
         'success': True,
-        'message': 'Check your phone and enter your M‑Pesa PIN.',
+        'message': 'Check your phone and enter your M-Pesa PIN.',
         'checkout_request_id': 'simulated_' + phone,
     })
 
@@ -54,10 +49,6 @@ def initiate_payment(request):
 @csrf_exempt
 @require_POST
 def mpesa_callback(request):
-    """
-    Simulate the M‑Pesa callback. This would normally be called by Safaricom.
-    We'll trigger it manually from the checkout page after the user "pays".
-    """
     checkout_request_id = request.POST.get('checkout_request_id', '')
     phone = request.session.get('pending_phone', '')
 
@@ -73,13 +64,40 @@ def mpesa_callback(request):
         user.set_unusable_password()
         user.save()
 
-    # Log the user in (so they own the order)
+    # --- Cart Merging Fix ---
+    # Get the current session-based cart (guest cart with items)
+    session_key = request.session.session_key
+    guest_cart = None
+    if session_key:
+        try:
+            guest_cart = Cart.objects.get(session_key=session_key)
+        except Cart.DoesNotExist:
+            pass
+
+    # Get or create the user's cart
+    user_cart, _ = Cart.objects.get_or_create(user=user)
+
+    # If there's a guest cart with items, transfer them to the user cart
+    if guest_cart and guest_cart.items.exists():
+        for item in guest_cart.items.all():
+            # Check if user cart already has this product
+            existing = CartItem.objects.filter(cart=user_cart, product=item.product).first()
+            if existing:
+                existing.quantity = item.quantity  # Replace with guest quantity
+                existing.save()
+            else:
+                # Move item to user cart
+                item.cart = user_cart
+                item.save()
+        # Delete the now-empty guest cart
+        guest_cart.delete()
+    # --- End Cart Merging ---
+
+    # Log the user in so they own the order
     login(request, user)
 
-    # Retrieve their cart
-    cart = get_or_create_cart(request)
-
-    # Create the order
+    # Retrieve the user's cart (now contains merged items)
+    cart = user_cart
     items = cart.items.select_related('product__farmer').all()
     if not items:
         return JsonResponse({'success': False, 'message': 'Cart empty.'})
@@ -89,7 +107,6 @@ def mpesa_callback(request):
     delivery_fee = 150
     total = subtotal + delivery_fee
 
-    # Snapshot the address (for now, use a placeholder)
     address_snapshot = {
         'county': 'Nairobi',
         'area': 'Test Area',
@@ -106,7 +123,7 @@ def mpesa_callback(request):
         delivery_address_snapshot=address_snapshot,
         consumer_phone_at_order=phone,
         status='pending',
-        auto_cancel_at=None,  # We'll set this later when the farmer confirms
+        auto_cancel_at=None,
     )
 
     for item in items:
@@ -119,7 +136,6 @@ def mpesa_callback(request):
             quantity=item.quantity,
         )
 
-    # Record the payment
     MpesaPayment.objects.create(
         order=order,
         merchant_request_id='sim_merchant_' + str(order.id),
@@ -134,7 +150,8 @@ def mpesa_callback(request):
     cart.items.all().delete()
 
     # Clean up session
-    del request.session['pending_phone']
+    if 'pending_phone' in request.session:
+        del request.session['pending_phone']
 
     return JsonResponse({
         'success': True,

@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem;">Checkout</h1>
+
+<!-- Order Summary -->
+<div style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
+    <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Order Summary</h2>
+    {% for item in items %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border);">
+        <div style="flex: 1; min-width: 0;">
+            <span style="font-weight: 600; font-size: 0.95rem;">{{ item.product.name }}</span>
+            <span style="color: var(--slate-gray); font-size: 0.85rem; margin-left: 0.5rem;">x{{ item.quantity|floatformat:"-2" }}</span>
+        </div>
+        <span style="font-weight: 600; font-size: 0.95rem;">KSh {{ item.line_total|floatformat:2 }}</span>
+    </div>
+    {% endfor %}
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.9rem;">
+        <span style="color: var(--slate-gray);">Subtotal</span>
+        <span>KSh {{ subtotal|floatformat:2 }}</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.9rem;">
+        <span style="color: var(--slate-gray);">Delivery Fee</span>
+        <span>KSh {{ delivery_fee|floatformat:2 }}</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--color-border); padding-top: 0.5rem; margin-top: 0.5rem; font-weight: 700; font-size: 1.1rem;">
+        <span>Total</span>
+        <span style="color: var(--forest-green);">KSh {{ total|floatformat:2 }}</span>
+    </div>
+</div>
+
+<!-- Payment Section -->
+<div id="payment-section" style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Pay with M-Pesa</h2>
+    <label for="phone" style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.95rem;">M-Pesa Phone Number</label>
+    <p style="font-size: 0.8rem; color: var(--slate-gray); margin-bottom: 0.5rem;">Enter the phone number where you'll receive the STK Push.</p>
+    <input type="tel" id="phone" name="phone" placeholder="+254700000000" value="+254700000000"
+           style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 1rem; margin-bottom: 1rem; box-sizing: border-box;">
+    <button onclick="pay()"
+            style="width: 100%; padding: 1rem; background-color: var(--sunrise-orange); color: white; border: none; border-radius: 4px; font-size: 1.1rem; font-weight: 700; cursor: pointer;">
+        Pay KSh {{ total|floatformat:2 }}
+    </button>
+    <p id="pay-message" style="margin-top: 1rem; font-size: 0.9rem; color: var(--slate-gray); text-align: center;"></p>
+</div>
+
+<!-- Success Section (hidden initially) -->
+<div id="success-section" style="display: none; text-align: center; padding: 2rem 1rem;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+    <h2 style="font-size: 1.25rem; color: var(--charcoal); margin-bottom: 0.5rem;">Order Placed Successfully!</h2>
+    <p style="color: var(--slate-gray); margin-bottom: 1rem;">Your order has been received and is now pending farmer confirmation.</p>
+    <a href="/orders/" style="display: inline-block; padding: 0.75rem 1.5rem; background-color: var(--forest-green); color: white; text-decoration: none; border-radius: 4px; font-weight: 600;">Track Your Order</a>
+</div>
+
+<script>
+    function pay() {
+        const phone = document.getElementById('phone').value.trim();
+        if (!phone) {
+            document.getElementById('pay-message').textContent = 'Please enter a phone number.';
+            return;
+        }
+
+        document.getElementById('pay-message').textContent = 'Initiating payment...';
+
+        // Step 1: Initiate the simulated STK Push
+        fetch('/checkout/pay/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: 'phone=' + encodeURIComponent(phone),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                document.getElementById('pay-message').textContent = data.message || 'Payment failed.';
+                return;
+            }
+
+            // Step 2: Simulate user entering PIN and Safaricom callback
+            document.getElementById('pay-message').textContent = 'Check your phone and enter your M-Pesa PIN...';
+
+            // Simulate a 2-second delay for the PIN entry, then trigger the callback
+            setTimeout(() => {
+                fetch('/webhooks/mpesa/callback/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'checkout_request_id=' + encodeURIComponent(data.checkout_request_id),
+                })
+                .then(r => r.json())
+                .then(callbackData => {
+                    if (callbackData.success) {
+                        document.getElementById('payment-section').style.display = 'none';
+                        document.getElementById('success-section').style.display = 'block';
+                    } else {
+                        document.getElementById('pay-message').textContent = callbackData.message || 'Payment verification failed.';
+                    }
+                });
+            }, 2000);
+        });
+    }
+</script>
+{% endblock %}
