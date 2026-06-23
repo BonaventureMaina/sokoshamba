@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from marketplace.views import home, product_list, product_detail, cart_detail, add_to_cart, remove_from_cart
 from orders.views import (
     checkout, initiate_payment, mpesa_callback,
@@ -22,4 +22,5 @@ urlpatterns = [
     path('orders/<int:order_id>/', order_detail, name='order_detail'),
     path('farmer/orders/', farmer_order_list, name='farmer_order_list'),
     path('farmer/orders/<int:order_id>/', farmer_order_detail, name='farmer_order_detail'),
+    path('', include('accounts.urls')),
 ]
