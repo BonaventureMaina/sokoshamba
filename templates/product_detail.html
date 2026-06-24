@@ -1,14 +1,12 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div>
-    <a href="/products/" style="display: inline-block; margin-bottom: 1rem; color: var(--forest-green); text-decoration: none; font-size: 0.9rem; font-weight: 600;">← Back to Products</a>
-</div>
+<a href="/products/" style="display: inline-block; margin-bottom: 1rem; color: var(--green-600); text-decoration: none; font-size: 0.9rem; font-weight: 600;">← Back to Products</a>
 
 <!-- Product Image -->
-<div style="width: 100%; aspect-ratio: 1; background-color: var(--pale-mint); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 5rem; margin-bottom: 1rem; overflow: hidden;">
+<div style="width: 100%; max-height: 320px; aspect-ratio: 4 / 3; background: linear-gradient(135deg, var(--green-100), #e8f5e9); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 3rem; margin-bottom: 1.2rem; overflow: hidden; box-shadow: var(--shadow-sm);">
     {% if product.images.first %}
-    <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+    <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: contain;">
     {% else %}
     🥬
     {% endif %}
@@ -16,86 +14,86 @@
 
 <!-- Product Name & Organic Tag -->
 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-    <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--charcoal);">{{ product.name }}</h1>
+    <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--green-900);">{{ product.name }}</h1>
     {% if product.is_organic %}
-    <span style="background-color: var(--mint-green); color: var(--forest-green); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">Organic</span>
+    <span class="badge-organic" style="font-size: 0.7rem;">Organic</span>
     {% endif %}
 </div>
 
 <!-- Farmer Snippet -->
 <a href="/farmer/{{ product.farmer.id }}/" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; text-decoration: none; color: inherit;">
-    <div style="width: 40px; height: 40px; border-radius: 50%; background-color: var(--mint-green); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">🧑‍🌾</div>
+    <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--green-200), var(--green-400)); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; color: white;">🧑‍🌾</div>
     <div>
         <div style="display: flex; align-items: center; gap: 0.25rem;">
-            <span style="font-weight: 600; font-size: 0.95rem;">{{ product.farmer.farm_name }}</span>
-            <span style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; background-color: var(--emerald-green); color: white; border-radius: 50%; font-size: 11px; flex-shrink: 0;" title="Verified Farmer">✓</span>
+            <span style="font-weight: 700; font-size: 0.95rem;">{{ product.farmer.farm_name }}</span>
+            <span class="badge-verified" title="Verified Farmer">✓</span>
         </div>
-        <span style="font-size: 0.8rem; color: var(--slate-gray);">{{ product.farmer.county }}</span>
+        <span style="font-size: 0.8rem; color: var(--gray-600);">{{ product.farmer.county }}</span>
     </div>
 </a>
 
 <!-- Price -->
 <div style="margin-bottom: 1.5rem;">
-    <span style="font-size: 1.75rem; font-weight: 700; color: var(--forest-green);">KSh {{ product.price }}</span>
-    <span style="font-size: 1rem; color: var(--slate-gray);"> / {{ product.unit }}</span>
+    <span style="font-size: 2rem; font-weight: 800; color: var(--green-800);">KSh {{ product.price }}</span>
+    <span style="font-size: 1rem; color: var(--gray-600);"> / {{ product.unit }}</span>
 </div>
 
 <!-- Quantity Selector -->
 <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
-    <label for="quantity" style="font-weight: 600; font-size: 0.95rem;">Quantity:</label>
-    <div style="display: flex; align-items: center; border: 1px solid var(--color-border); border-radius: 4px; overflow: hidden;">
-        <button type="button" onclick="changeQty(-1)" style="width: 48px; height: 48px; border: none; background: #f1f3f5; font-size: 1.25rem; cursor: pointer;">−</button>
-        <input type="number" id="quantity" name="quantity" value="1" min="1" step="1" style="width: 60px; height: 48px; border: none; text-align: center; font-size: 1rem; font-weight: 600; -moz-appearance: textfield;" onchange="updateQty()">
-        <button type="button" onclick="changeQty(1)" style="width: 48px; height: 48px; border: none; background: #f1f3f5; font-size: 1.25rem; cursor: pointer;">+</button>
+    <label for="quantity" style="font-weight: 700; font-size: 0.95rem;">Quantity:</label>
+    <div style="display: flex; align-items: center; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); overflow: hidden;">
+        <button type="button" onclick="changeQty(-1)" style="width: 48px; height: 48px; border: none; background: var(--gray-100); font-size: 1.25rem; cursor: pointer; color: var(--charcoal);">−</button>
+        <input type="number" id="quantity" name="quantity" value="1" min="1" step="1" style="width: 60px; height: 48px; border: none; text-align: center; font-size: 1rem; font-weight: 700; -moz-appearance: textfield;">
+        <button type="button" onclick="changeQty(1)" style="width: 48px; height: 48px; border: none; background: var(--gray-100); font-size: 1.25rem; cursor: pointer; color: var(--charcoal);">+</button>
     </div>
 </div>
 
-<!-- Add to Cart Button -->
+<!-- Add to Cart -->
 <div id="add-to-cart-container" style="margin-bottom: 2rem;">
-    <button id="add-to-cart-btn" onclick="addToCart({{ product.id }})" style="width: 100%; padding: 1rem; background-color: var(--sunrise-orange); color: white; border: none; border-radius: 4px; font-size: 1.1rem; font-weight: 700; cursor: pointer;">
+    <button id="add-to-cart-btn" onclick="addToCart({{ product.id }})" class="btn btn-cta" style="width: 100%; padding: 1rem;">
         Add to Cart — KSh <span id="totalPrice">{{ product.price }}</span>
     </button>
 </div>
 
 <!-- Toast -->
-<div id="toast" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: var(--charcoal); color: white; padding: 0.75rem 1.5rem; border-radius: 2rem; font-size: 0.95rem; font-weight: 600; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; pointer-events: none;">
+<div id="toast" style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--charcoal); color: white; padding: 0.75rem 1.5rem; border-radius: 2rem; font-size: 0.9rem; font-weight: 600; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; box-shadow: var(--shadow-lg);">
     <span id="toast-msg"></span>
 </div>
 
 <!-- Description -->
 {% if product.description %}
-<div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--pale-mint); border-radius: 8px;">
-    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">Description</h3>
+<div style="margin-bottom: 1.5rem; padding: 1rem 1.2rem; background: var(--green-100); border-radius: var(--radius-md);">
+    <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--green-900);">Description</h3>
     <p style="font-size: 0.95rem; color: var(--charcoal); line-height: 1.5;">{{ product.description }}</p>
 </div>
 {% endif %}
 
-<!-- Farmer Details -->
-<div style="border: 1px solid var(--color-border); border-radius: 8px; overflow: hidden; margin-bottom: 1.5rem;">
-    <button onclick="toggleAccordion(this)" style="width: 100%; padding: 1rem; background: white; border: none; text-align: left; font-size: 1rem; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+<!-- Farmer Details Accordion -->
+<div style="border: 1px solid var(--gray-200); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 1.5rem;">
+    <button onclick="toggleAccordion(this)" style="width: 100%; padding: 1rem 1.2rem; background: white; border: none; text-align: left; font-size: 1rem; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: var(--charcoal);">
         About {{ product.farmer.farm_name }}
         <span class="accordion-arrow" style="transition: transform 0.2s;">▼</span>
     </button>
-    <div class="accordion-content" style="padding: 0 1rem 1rem 1rem; display: none;">
+    <div class="accordion-content" style="padding: 0 1.2rem 1.2rem 1.2rem; display: none;">
         <p style="font-size: 0.9rem; color: var(--charcoal); margin-bottom: 0.5rem;">
             <strong>Location:</strong> {{ product.farmer.county }}{% if product.farmer.sub_county %}, {{ product.farmer.sub_county }}{% endif %}
         </p>
         {% if product.farmer.bio %}
         <p style="font-size: 0.9rem; color: var(--charcoal);">{{ product.farmer.bio }}</p>
         {% endif %}
-        <a href="/farmer/{{ product.farmer.id }}/" style="display: inline-block; margin-top: 0.5rem; color: var(--forest-green); font-weight: 600; font-size: 0.9rem; text-decoration: none;">View all products from this farmer →</a>
+        <a href="/farmer/{{ product.farmer.id }}/" style="display: inline-block; margin-top: 0.5rem; color: var(--green-600); font-weight: 700; font-size: 0.9rem; text-decoration: none;">View all products from this farmer →</a>
     </div>
 </div>
 
-<!-- Reviews Section -->
+<!-- Reviews -->
 <div style="margin-bottom: 2rem;">
-    <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Customer Reviews</h2>
+    <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--green-900);">Customer Reviews</h2>
     {% if reviews %}
         {% for review in reviews %}
-        <div style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 0.75rem;">
+        <div class="card" style="padding: 1rem; margin-bottom: 0.75rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-weight: 600; font-size: 0.9rem;">{{ review.consumer.phone }}</span>
-                <span style="color: #ff7b00; font-size: 0.9rem;">
+                <span style="font-weight: 700; font-size: 0.9rem;">{{ review.consumer.phone }}</span>
+                <span class="star-rating" style="font-size: 0.85rem;">
                     {% for i in "12345" %}
                         {% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}
                     {% endfor %}
@@ -104,11 +102,11 @@
             {% if review.text %}
             <p style="font-size: 0.9rem; color: var(--charcoal);">{{ review.text }}</p>
             {% endif %}
-            <p style="font-size: 0.75rem; color: var(--slate-gray); margin-top: 0.25rem;">{{ review.created_at|date:"M d, Y" }}</p>
+            <p style="font-size: 0.75rem; color: var(--gray-600); margin-top: 0.25rem;">{{ review.created_at|date:"M d, Y" }}</p>
         </div>
         {% endfor %}
     {% else %}
-        <p style="color: var(--slate-gray); font-size: 0.9rem;">No reviews yet. Be the first!</p>
+        <p style="color: var(--gray-600); font-size: 0.9rem;">No reviews yet. Be the first!</p>
     {% endif %}
 </div>
 
@@ -139,15 +137,9 @@
     function showToast(message, type = 'success') {
         toastMsg.textContent = message;
         toast.style.opacity = '1';
-        if (type === 'error') {
-            toast.style.backgroundColor = '#dc3545';
-        } else {
-            toast.style.backgroundColor = '#2c3e50';
-        }
+        toast.style.backgroundColor = type === 'error' ? '#dc3545' : 'var(--charcoal)';
         clearTimeout(toast.hideTimeout);
-        toast.hideTimeout = setTimeout(() => {
-            toast.style.opacity = '0';
-        }, 2500);
+        toast.hideTimeout = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
     }
 
     function addToCart(productId) {
@@ -167,7 +159,7 @@
         .then(data => {
             if (data.success) {
                 container.innerHTML = `
-                    <a href="/cart/" style="display: block; width: 100%; padding: 1rem; background-color: var(--forest-green); color: white; text-decoration: none; border-radius: 4px; font-size: 1.1rem; font-weight: 700; text-align: center;">
+                    <a href="/cart/" class="btn btn-primary" style="display: block; width: 100%; padding: 1rem; text-align: center;">
                         ✅ Added — View Cart
                     </a>
                 `;

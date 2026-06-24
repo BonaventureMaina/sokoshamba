@@ -1,51 +1,51 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem;">Checkout</h1>
+<h1 class="page-title">Checkout</h1>
+<p class="page-subtitle">Review your order and pay with M‑Pesa</p>
 
-<div style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
-    <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Order Summary</h2>
+<!-- Order Summary -->
+<div class="card" style="padding: 1rem; margin-bottom: 1.5rem;">
+    <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--green-900);">Order Summary</h2>
     {% for item in items %}
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--gray-200);">
         <div style="flex: 1; min-width: 0;">
-            <span style="font-weight: 600; font-size: 0.95rem;">{{ item.product.name }}</span>
-            <span style="color: var(--slate-gray); font-size: 0.85rem; margin-left: 0.5rem;">x{{ item.quantity|floatformat:"-2" }}</span>
+            <span style="font-weight: 700; font-size: 0.9rem;">{{ item.product.name }}</span>
+            <span style="color: var(--gray-600); font-size: 0.8rem; margin-left: 0.4rem;">x{{ item.quantity|floatformat:"-2" }}</span>
         </div>
-        <span style="font-weight: 600; font-size: 0.95rem;">KSh {{ item.line_total|floatformat:2 }}</span>
+        <span style="font-weight: 700; font-size: 0.9rem;">KSh {{ item.line_total|floatformat:2 }}</span>
     </div>
     {% endfor %}
-    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.9rem;">
-        <span style="color: var(--slate-gray);">Subtotal</span>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem; font-size: 0.85rem;">
+        <span style="color: var(--gray-600);">Subtotal</span>
         <span>KSh {{ subtotal|floatformat:2 }}</span>
     </div>
-    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.9rem;">
-        <span style="color: var(--slate-gray);">Delivery Fee</span>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem; font-size: 0.85rem;">
+        <span style="color: var(--gray-600);">Delivery Fee</span>
         <span>KSh {{ delivery_fee|floatformat:2 }}</span>
     </div>
-    <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--color-border); padding-top: 0.5rem; margin-top: 0.5rem; font-weight: 700; font-size: 1.1rem;">
+    <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--gray-200); padding-top: 0.5rem; margin-top: 0.5rem; font-weight: 800; font-size: 1.1rem;">
         <span>Total</span>
-        <span style="color: var(--forest-green);">KSh {{ total|floatformat:2 }}</span>
+        <span style="color: var(--green-800);">KSh {{ total|floatformat:2 }}</span>
     </div>
 </div>
 
-<div id="payment-section" style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-    <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Pay with M-Pesa</h2>
-    <label for="phone" style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.95rem;">M-Pesa Phone Number</label>
-    <p style="font-size: 0.8rem; color: var(--slate-gray); margin-bottom: 0.5rem;">Enter the phone number where you'll receive the STK Push.</p>
+<!-- Payment -->
+<div id="payment-section" class="card" style="padding: 1rem;">
+    <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--green-900);">Pay with M‑Pesa</h2>
+    <label for="phone" style="display: block; font-weight: 700; margin-bottom: 0.25rem; font-size: 0.9rem;">M‑Pesa Phone Number</label>
+    <p style="font-size: 0.8rem; color: var(--gray-600); margin-bottom: 0.5rem;">Enter the phone number where you'll receive the STK Push.</p>
     <input type="tel" id="phone" name="phone" placeholder="+254700000000" value="+254700000000"
-           style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 1rem; margin-bottom: 1rem; box-sizing: border-box;">
-    <button onclick="pay()"
-            style="width: 100%; padding: 1rem; background-color: var(--sunrise-orange); color: white; border: none; border-radius: 4px; font-size: 1.1rem; font-weight: 700; cursor: pointer;">
-        Pay KSh {{ total|floatformat:2 }}
-    </button>
-    <p id="pay-message" style="margin-top: 1rem; font-size: 0.9rem; color: var(--slate-gray); text-align: center;"></p>
+           style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); font-size: 1rem; margin-bottom: 1rem; box-sizing: border-box;">
+    <button onclick="pay()" class="btn btn-cta" style="width: 100%;">Pay KSh {{ total|floatformat:2 }}</button>
+    <p id="pay-message" style="margin-top: 1rem; font-size: 0.85rem; color: var(--gray-600); text-align: center;"></p>
 </div>
 
 <div id="success-section" style="display: none; text-align: center; padding: 2rem 1rem;">
-    <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
-    <h2 style="font-size: 1.25rem; color: var(--charcoal); margin-bottom: 0.5rem;">Order Placed Successfully!</h2>
-    <p style="color: var(--slate-gray); margin-bottom: 1rem;">Your order has been received and is now pending farmer confirmation.</p>
-    <a href="/orders/" style="display: inline-block; padding: 0.75rem 1.5rem; background-color: var(--forest-green); color: white; text-decoration: none; border-radius: 4px; font-weight: 600;">Track Your Order</a>
+    <div style="font-size: 3rem; margin-bottom: 0.75rem;">✅</div>
+    <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--green-900); margin-bottom: 0.5rem;">Order Placed!</h2>
+    <p style="color: var(--gray-600); margin-bottom: 1.5rem;">Your order is now pending farmer confirmation.</p>
+    <a href="/orders/" class="btn btn-primary">Track Your Order</a>
 </div>
 
 <script>
@@ -55,15 +55,10 @@
             document.getElementById('pay-message').textContent = 'Please enter a phone number.';
             return;
         }
-
-        document.getElementById('pay-message').textContent = 'Initiating M-Pesa payment...';
-
+        document.getElementById('pay-message').textContent = 'Initiating M‑Pesa payment...';
         fetch('/checkout/pay/', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': '{{ csrf_token }}',
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': '{{ csrf_token }}' },
             body: 'phone=' + encodeURIComponent(phone),
         })
         .then(r => r.json())
@@ -72,16 +67,11 @@
                 document.getElementById('pay-message').textContent = data.message || 'Payment failed.';
                 return;
             }
-
             document.getElementById('pay-message').textContent = 'Check your phone and enter your M‑Pesa PIN.';
-            // The real callback will arrive at the server asynchronously.
-            // For now, we just inform the user. In a production app, we would poll the server
-            // or use a WebSocket to detect when the payment completes.
-            // For simplicity, we'll tell the user to refresh their orders page.
             setTimeout(() => {
                 document.getElementById('payment-section').style.display = 'none';
                 document.getElementById('success-section').style.display = 'block';
-            }, 5000); // Give Safaricom time to process
+            }, 5000);
         });
     }
 </script>
