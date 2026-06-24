@@ -4,6 +4,7 @@ from marketplace.views import (
     home, product_list, product_detail,
     cart_detail, add_to_cart, remove_from_cart,
     farmer_products, farmer_product_add, farmer_product_edit,
+    terms, privacy,
 )
 from orders.views import (
     checkout, initiate_payment, mpesa_callback,
@@ -36,4 +37,6 @@ urlpatterns = [
     path('farmer/products/edit/<int:product_id>/', farmer_product_edit, name='farmer_product_edit'),
     path('farmer/earnings/', farmer_earnings, name='farmer_earnings'),
     path('order/<int:order_id>/review/', submit_review, name='submit_review'),
+    path('terms/', terms, name='terms'),
+    path('privacy/', privacy, name='privacy'),
 ]

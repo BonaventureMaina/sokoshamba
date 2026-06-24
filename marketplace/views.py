@@ -399,3 +399,10 @@ def farmer_product_edit(request, product_id):
         'farmer': farmer,
         'product': product,
     })
+
+def terms(request):
+    return render(request, 'terms.html')
+
+
+def privacy(request):
+    return render(request, 'privacy.html')
