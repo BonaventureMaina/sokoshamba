@@ -22,7 +22,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(ProductImage)
 class ProductImageAdmin(admin.ModelAdmin):
-    list_display = ('product', 'order')
+    list_display = ('product', 'image', 'order')
     search_fields = ('product__name',)
 
 

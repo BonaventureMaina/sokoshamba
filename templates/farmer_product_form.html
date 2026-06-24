@@ -14,7 +14,7 @@
     </div>
     {% endif %}
 
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
 
         <label for="name" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Product Name</label>
@@ -49,6 +49,13 @@
         <label for="description" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Description (optional)</label>
         <textarea id="description" name="description" rows="3"
                   style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 1rem; margin-bottom: 1rem; box-sizing: border-box;">{{ product.description|default:'' }}</textarea>
+
+        <label for="image" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Product Image</label>
+        {% if product and product.images.first %}
+        <p style="font-size: 0.85rem; margin-bottom: 0.5rem;">Current image: {{ product.images.first.image.name }}</p>
+        {% endif %}
+        <input type="file" id="image" name="image" accept="image/*"
+               style="width: 100%; padding: 0.5rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.95rem; margin-bottom: 1rem; box-sizing: border-box;">
 
         <div style="margin-bottom: 1rem;">
             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">

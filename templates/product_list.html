@@ -38,7 +38,7 @@
         <div style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; height: 100%;">
             <div style="width: 100%; aspect-ratio: 1; background-color: var(--pale-mint); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; overflow: hidden;">
                 {% if product.images.first %}
-                <img src="{{ product.images.first.image_url }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
                 {% else %}
                 🥬
                 {% endif %}

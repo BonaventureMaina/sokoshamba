@@ -45,7 +45,7 @@ class ProductImage(models.Model):
         on_delete=models.CASCADE,
         related_name='images',
     )
-    image_url = models.URLField()
+    image = models.ImageField(upload_to='product_images/')
     order = models.IntegerField(default=0)
 
     def __str__(self):
@@ -107,6 +107,7 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
+
 
 class PendingCheckout(models.Model):
     checkout_request_id = models.CharField(max_length=50, unique=True)

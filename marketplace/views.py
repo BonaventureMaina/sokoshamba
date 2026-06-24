@@ -1,9 +1,22 @@
+import os
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Avg
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from .models import Category, Product, Cart, CartItem
+from django.db.models import Avg
+from .models import Category, Product, ProductImage, Cart, CartItem, PendingCheckout
 from reviews.models import Review
+
+
+def get_verified_farmer(user):
+    if user.is_authenticated and user.role == 'farmer':
+        try:
+            profile = user.farmer_profile
+            if profile.verification_status == 'verified' and profile.is_active:
+                return profile
+        except Exception:
+            pass
+    return None
 
 
 def home(request):
@@ -18,10 +31,10 @@ def product_list(request):
         farmer__is_active=True,
         farmer__verification_status='verified'
     ).select_related('farmer__user').prefetch_related('images')
-    # Annotate average rating per farmer
-    products = products.annotate(avg_rating=Avg('farmer__reviews__rating'))
     if category_id:
         products = products.filter(category_id=category_id)
+    products = products.annotate(avg_rating=Avg('farmer__reviews__rating'))
+
     # Pre-compute star display
     for product in products:
         avg = product.avg_rating
@@ -30,14 +43,7 @@ def product_list(request):
             product.star_display = '★' * filled + '☆' * (5 - filled)
         else:
             product.star_display = '☆' * 5
-    # Pre-compute star display
-    for product in products:
-        avg = product.avg_rating
-        if avg and avg > 0:
-            filled = int(round(avg))
-            product.star_display = '★' * filled + '☆' * (5 - filled)
-        else:
-            product.star_display = '☆' * 5
+
     context = {
         'categories': categories,
         'products': products,
@@ -54,7 +60,6 @@ def product_detail(request, product_id):
         farmer__verification_status='verified'
     ).select_related('farmer__user').prefetch_related('images').first()
     if not product:
-        from django.http import Http404
         raise Http404("Product not found")
     reviews = Review.objects.filter(farmer=product.farmer).select_related('consumer').order_by('-created_at')[:5]
     context = {'product': product, 'reviews': reviews}
@@ -112,7 +117,6 @@ def add_to_cart(request):
         cart_item.save()
 
     cart.save()
-
     return JsonResponse({
         'success': True,
         'message': f'Added {quantity} x {product.name} to cart.',
@@ -133,7 +137,6 @@ def cart_detail(request):
     cart = get_or_create_cart(request)
     items = cart.items.select_related('product__farmer').all()
     subtotal = 0
-    # Attach line totals to items
     for item in items:
         item.line_total = item.product.price * item.quantity
         subtotal += item.line_total
@@ -143,8 +146,7 @@ def cart_detail(request):
         'subtotal': subtotal,
     }
     return render(request, 'cart.html', context)
-from django.contrib.auth.decorators import login_required
-from orders.views import get_verified_farmer
+
 
 @login_required
 def farmer_products(request):
@@ -154,8 +156,6 @@ def farmer_products(request):
     products = farmer.products.all()
     return render(request, 'farmer_products.html', {'products': products, 'farmer': farmer})
 
-from django.shortcuts import get_object_or_404, redirect
-from .models import Product
 
 @login_required
 def farmer_product_add(request):
@@ -205,6 +205,11 @@ def farmer_product_add(request):
                 product.save()
             except Category.DoesNotExist:
                 pass
+
+        # Handle uploaded image
+        image_file = request.FILES.get('image')
+        if image_file:
+            ProductImage.objects.create(product=product, image=image_file)
 
         return redirect('farmer_products')
 
@@ -268,128 +273,11 @@ def farmer_product_edit(request, product_id):
             product.category = None
         product.save()
 
-        return redirect('farmer_products')
-
-    categories = Category.objects.filter(is_active=True)
-    return render(request, 'farmer_product_form.html', {
-        'categories': categories,
-        'farmer': farmer,
-        'product': product,
-    })
-
-from django.shortcuts import get_object_or_404, redirect
-from .models import Product
-
-@login_required
-def farmer_product_add(request):
-    farmer = get_verified_farmer(request.user)
-    if not farmer:
-        return HttpResponseForbidden("Access denied.")
-
-    if request.method == 'POST':
-        name = request.POST.get('name', '').strip()
-        category_id = request.POST.get('category')
-        unit = request.POST.get('unit', '').strip()
-        price = request.POST.get('price', '').strip()
-        quantity = request.POST.get('quantity', '').strip()
-        description = request.POST.get('description', '').strip()
-        is_organic = request.POST.get('is_organic') == 'on'
-
-        if not name or not unit or not price or not quantity:
-            return render(request, 'farmer_product_form.html', {
-                'error': 'Name, unit, price, and quantity are required.',
-                'categories': Category.objects.filter(is_active=True),
-                'farmer': farmer,
-            })
-
-        try:
-            price = float(price)
-            quantity = float(quantity)
-        except ValueError:
-            return render(request, 'farmer_product_form.html', {
-                'error': 'Price and quantity must be numbers.',
-                'categories': Category.objects.filter(is_active=True),
-                'farmer': farmer,
-            })
-
-        product = Product.objects.create(
-            farmer=farmer,
-            name=name,
-            unit=unit,
-            price=price,
-            available_quantity=quantity,
-            description=description,
-            is_organic=is_organic,
-            is_active=True,
-        )
-        if category_id:
-            try:
-                product.category = Category.objects.get(pk=category_id, is_active=True)
-                product.save()
-            except Category.DoesNotExist:
-                pass
-
-        return redirect('farmer_products')
-
-    categories = Category.objects.filter(is_active=True)
-    return render(request, 'farmer_product_form.html', {
-        'categories': categories,
-        'farmer': farmer,
-    })
-
-
-@login_required
-def farmer_product_edit(request, product_id):
-    farmer = get_verified_farmer(request.user)
-    if not farmer:
-        return HttpResponseForbidden("Access denied.")
-
-    product = get_object_or_404(Product, id=product_id, farmer=farmer)
-
-    if request.method == 'POST':
-        name = request.POST.get('name', '').strip()
-        category_id = request.POST.get('category')
-        unit = request.POST.get('unit', '').strip()
-        price = request.POST.get('price', '').strip()
-        quantity = request.POST.get('quantity', '').strip()
-        description = request.POST.get('description', '').strip()
-        is_organic = request.POST.get('is_organic') == 'on'
-        is_active = request.POST.get('is_active') == 'on'
-
-        if not name or not unit or not price or not quantity:
-            return render(request, 'farmer_product_form.html', {
-                'error': 'Name, unit, price, and quantity are required.',
-                'categories': Category.objects.filter(is_active=True),
-                'farmer': farmer,
-                'product': product,
-            })
-
-        try:
-            price = float(price)
-            quantity = float(quantity)
-        except ValueError:
-            return render(request, 'farmer_product_form.html', {
-                'error': 'Price and quantity must be numbers.',
-                'categories': Category.objects.filter(is_active=True),
-                'farmer': farmer,
-                'product': product,
-            })
-
-        product.name = name
-        product.unit = unit
-        product.price = price
-        product.available_quantity = quantity
-        product.description = description
-        product.is_organic = is_organic
-        product.is_active = is_active
-        if category_id:
-            try:
-                product.category = Category.objects.get(pk=category_id, is_active=True)
-            except Category.DoesNotExist:
-                product.category = None
-        else:
-            product.category = None
-        product.save()
+        # Handle uploaded image
+        image_file = request.FILES.get('image')
+        if image_file:
+            product.images.all().delete()
+            ProductImage.objects.create(product=product, image=image_file)
 
         return redirect('farmer_products')
 
@@ -399,6 +287,7 @@ def farmer_product_edit(request, product_id):
         'farmer': farmer,
         'product': product,
     })
+
 
 def terms(request):
     return render(request, 'terms.html')
