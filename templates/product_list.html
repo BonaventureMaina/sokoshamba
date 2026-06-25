@@ -35,8 +35,13 @@
                 <h2 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.2rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--charcoal);">
                     {{ product.name }}
                 </h2>
-                <!-- Farmer snippet -->
-                <div style="display: flex; align-items: center; gap: 0.2rem; margin-bottom: 0.3rem;">
+                <!-- Farmer snippet with photo -->
+                <div style="display: flex; align-items: center; gap: 0.25rem; margin-bottom: 0.3rem;">
+                    {% if product.farmer.photo_url %}
+                    <img src="{{ product.farmer.photo_url.url }}" alt="{{ product.farmer.farm_name }}" style="width: 18px; height: 18px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+                    {% else %}
+                    <span style="font-size: 0.7rem;">🧑‍🌾</span>
+                    {% endif %}
                     <span style="font-size: 0.7rem; color: var(--gray-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                         {{ product.farmer.farm_name }}
                     </span>

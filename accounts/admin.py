@@ -40,6 +40,11 @@ class FarmerProfileAdmin(admin.ModelAdmin):
     list_filter = ('verification_status', 'is_active', 'county')
     search_fields = ('farm_name', 'user__phone')
     readonly_fields = ('verification_notes', 'verified_at', 'verified_by')
+    fields = (
+        'user', 'farm_name', 'county', 'sub_county', 'bio',
+        'photo_url', 'verification_status', 'verification_notes',
+        'verified_at', 'verified_by', 'is_active',
+    )
 
     def user_phone(self, obj):
         return obj.user.phone
@@ -60,5 +65,6 @@ class DeliveryAddressAdmin(admin.ModelAdmin):
 class OtpCodeAdmin(admin.ModelAdmin):
     list_display = ('user', 'code', 'expires_at', 'attempts', 'created_at')
     readonly_fields = ('created_at',)
+
 
 admin.site.register(User, UserAdmin)

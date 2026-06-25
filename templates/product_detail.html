@@ -22,7 +22,7 @@
 
 <!-- Farmer Snippet -->
 <a href="/farmer/{{ product.farmer.id }}/" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; text-decoration: none; color: inherit;">
-    <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--green-200), var(--green-400)); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; color: white;">🧑‍🌾</div>
+    {% if product.farmer.photo_url %}<img src="{{ product.farmer.photo_url.url }}" alt="{{ product.farmer.farm_name }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">{% else %}<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--green-200), var(--green-400)); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; color: white;">🧑‍🌾</div>{% endif %}
     <div>
         <div style="display: flex; align-items: center; gap: 0.25rem;">
             <span style="font-weight: 700; font-size: 0.95rem;">{{ product.farmer.farm_name }}</span>
