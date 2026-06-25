@@ -15,7 +15,7 @@ from orders.views import (
     farmer_earnings, reorder,
 )
 from logistics.views import courier_status
-from reviews.views import submit_review
+from reviews.views import submit_review, respond_to_review
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -40,6 +40,7 @@ urlpatterns = [
     path('farmer/earnings/', farmer_earnings, name='farmer_earnings'),
     path('order/<int:order_id>/review/', submit_review, name='submit_review'),
     path('order/<int:order_id>/reorder/', reorder, name='reorder'),
+    path('review/<int:review_id>/respond/', respond_to_review, name='respond_to_review'),
     path('terms/', terms, name='terms'),
     path('privacy/', privacy, name='privacy'),
 ]

@@ -102,6 +102,15 @@
             {% if review.text %}
             <p style="font-size: 0.9rem; color: var(--charcoal);">{{ review.text }}</p>
             {% endif %}
+            {% if user.is_authenticated and user.role == 'farmer' and user.farmer_profile == review.farmer %}
+            <a href="/review/{{ review.id }}/respond/" style="font-size: 0.75rem; color: var(--green-600); text-decoration: none; font-weight: 600;">{% if review.response_text %}Edit Response{% else %}Respond{% endif %}</a>
+            {% endif %}
+            {% if review.response_text %}
+            <div style="background: var(--green-100); padding: 0.75rem; border-radius: var(--radius-sm); margin-top: 0.5rem;">
+                <p style="font-size: 0.8rem; color: var(--gray-600); margin-bottom: 0.15rem;"><strong>Farmer's response:</strong></p>
+                <p style="font-size: 0.9rem; color: var(--charcoal);">{{ review.response_text }}</p>
+            </div>
+            {% endif %}
             <p style="font-size: 0.75rem; color: var(--gray-600); margin-top: 0.25rem;">{{ review.created_at|date:"M d, Y" }}</p>
         </div>
         {% endfor %}

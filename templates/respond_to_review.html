@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<a href="/farmer/orders/" style="display: inline-block; margin-bottom: 1rem; color: var(--green-600); text-decoration: none; font-size: 0.9rem; font-weight: 600;">← Back</a>
+
+<h1 class="page-title">Respond to Review</h1>
+<p class="page-subtitle">Reply to {{ review.consumer.phone }}'s review</p>
+
+<div class="card" style="padding: 1.5rem; max-width: 500px;">
+    <!-- The original review -->
+    <div style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--gray-200);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <strong>{{ review.consumer.phone }}</strong>
+            <span class="star-rating" style="font-size: 0.85rem;">
+                {% for i in "12345" %}
+                    {% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}
+                {% endfor %}
+            </span>
+        </div>
+        {% if review.text %}
+        <p style="color: var(--charcoal); font-size: 0.95rem;">{{ review.text }}</p>
+        {% endif %}
+        <p style="font-size: 0.75rem; color: var(--gray-600);">{{ review.created_at|date:"M d, Y" }}</p>
+    </div>
+
+    {% if error %}
+    <div class="error-msg">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="input-group">
+            <label for="response_text">Your Response</label>
+            <textarea id="response_text" name="response_text" rows="4" placeholder="Write your response here..." style="resize: vertical;">{{ review.response_text|default:'' }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+            {% if review.response_text %}Update Response{% else %}Submit Response{% endif %}
+        </button>
+    </form>
+</div>
+{% endblock %}
