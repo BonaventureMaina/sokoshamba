@@ -216,6 +216,50 @@
             margin-bottom: 1.5rem;
         }
 
+        /* ── Form Elements ── */
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+            color: var(--charcoal);
+        }
+
+        .input-group input,
+        .input-group textarea,
+        .input-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color var(--transition);
+            box-sizing: border-box;
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: var(--green-400);
+            box-shadow: 0 0 0 3px rgba(82,183,136,0.15);
+        }
+
+        .error-msg {
+            background: #fff0f0;
+            color: #cc0000;
+            padding: 0.75rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            border-left: 3px solid #cc0000;
+        }
+
         @media (min-width: 600px) {
             .page-title { font-size: 2rem; }
             main { padding: 2rem; }

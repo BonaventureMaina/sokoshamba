@@ -114,4 +114,12 @@ class PendingCheckout(models.Model):
     phone = models.CharField(max_length=15)
     cart_id = models.IntegerField()
     total = models.DecimalField(max_digits=10, decimal_places=2)
+    address_snapshot = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+# Add address_snapshot to PendingCheckout
+from django.db import models as _models
+class _PendingCheckoutAddress(models.Model):
+    class Meta:
+        abstract = True
+    address_snapshot = _models.JSONField(null=True, blank=True)

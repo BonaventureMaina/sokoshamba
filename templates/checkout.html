@@ -5,7 +5,7 @@
 <p class="page-subtitle">Review your order and pay with M‑Pesa</p>
 
 <!-- Order Summary -->
-<div class="card" style="padding: 1rem; margin-bottom: 1.5rem;">
+<div class="card" style="padding: 1rem; margin-bottom: 1rem;">
     <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--green-900);">Order Summary</h2>
     {% for item in items %}
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--gray-200);">
@@ -30,6 +30,26 @@
     </div>
 </div>
 
+<!-- Delivery Address -->
+<div class="card" style="padding: 1rem; margin-bottom: 1rem;">
+    <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--green-900);">Delivery Address</h2>
+    <label for="county" style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.15rem;">County</label>
+    <input type="text" id="county" name="county" placeholder="e.g. Nairobi" required
+           style="width: 100%; padding: 0.65rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); font-size: 0.9rem; margin-bottom: 0.75rem; box-sizing: border-box;">
+
+    <label for="area" style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.15rem;">Area / Estate</label>
+    <input type="text" id="area" name="area" placeholder="e.g. Kilimani, Westlands" required
+           style="width: 100%; padding: 0.65rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); font-size: 0.9rem; margin-bottom: 0.75rem; box-sizing: border-box;">
+
+    <label for="landmark" style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.15rem;">Landmark (optional)</label>
+    <input type="text" id="landmark" name="landmark" placeholder="e.g. Near KCB Bank"
+           style="width: 100%; padding: 0.65rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); font-size: 0.9rem; margin-bottom: 0.75rem; box-sizing: border-box;">
+
+    <label for="instructions" style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.15rem;">Delivery Instructions (optional)</label>
+    <input type="text" id="instructions" name="instructions" placeholder="e.g. Blue gate, call on arrival"
+           style="width: 100%; padding: 0.65rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); font-size: 0.9rem; margin-bottom: 0.5rem; box-sizing: border-box;">
+</div>
+
 <!-- Payment -->
 <div id="payment-section" class="card" style="padding: 1rem;">
     <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--green-900);">Pay with M‑Pesa</h2>
@@ -51,15 +71,37 @@
 <script>
     function pay() {
         const phone = document.getElementById('phone').value.trim();
+        const county = document.getElementById('county').value.trim();
+        const area = document.getElementById('area').value.trim();
+        const landmark = document.getElementById('landmark').value.trim();
+        const instructions = document.getElementById('instructions').value.trim();
+
         if (!phone) {
             document.getElementById('pay-message').textContent = 'Please enter a phone number.';
             return;
         }
+        if (!county || !area) {
+            document.getElementById('pay-message').textContent = 'Please enter your county and area.';
+            return;
+        }
+
         document.getElementById('pay-message').textContent = 'Initiating M‑Pesa payment...';
+
+        const body = new URLSearchParams({
+            phone: phone,
+            county: county,
+            area: area,
+            landmark: landmark,
+            instructions: instructions,
+        });
+
         fetch('/checkout/pay/', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': '{{ csrf_token }}' },
-            body: 'phone=' + encodeURIComponent(phone),
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: body,
         })
         .then(r => r.json())
         .then(data => {

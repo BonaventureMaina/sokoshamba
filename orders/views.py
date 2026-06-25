@@ -81,11 +81,18 @@ def initiate_payment(request):
         return JsonResponse({'success': False, 'message': f'M-Pesa request failed: {str(e)}'}, status=500)
 
     # Store pending checkout so the callback can retrieve cart and phone
+    address_snapshot = {
+        'county': request.POST.get('county', ''),
+        'area': request.POST.get('area', ''),
+        'landmark': request.POST.get('landmark', ''),
+        'instructions': request.POST.get('instructions', ''),
+    }
     PendingCheckout.objects.create(
         checkout_request_id=result['CheckoutRequestID'],
         phone=phone,
         cart_id=cart.id,
         total=total,
+        address_snapshot=address_snapshot,
     )
 
     return JsonResponse({
@@ -169,7 +176,8 @@ def mpesa_callback(request):
     delivery_fee = 150
     total = subtotal + delivery_fee
 
-    address_snapshot = {
+    # Use the address saved during checkout, fallback to test address
+    address_snapshot = pending.address_snapshot or {
         'county': 'Nairobi',
         'area': 'Test Area',
         'landmark': 'Test Landmark',
