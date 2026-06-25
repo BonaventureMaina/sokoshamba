@@ -32,7 +32,16 @@ def send_sms(phone, message):
 
     recipients = [f'+{clean_phone}']
     response = sms.send(message, recipients)
-    if response and isinstance(response, list) and response[0].get('status') == 'Success':
+
+    # Africa's Talking returns a dict with 'SMSMessageData'
+    if isinstance(response, dict):
+        data = response.get('SMSMessageData', {})
+        recipients_list = data.get('Recipients', [])
+        if recipients_list and recipients_list[0].get('status') == 'Success':
+            return True
+        else:
+            raise Exception(f"SMS send failed: {recipients_list}")
+    elif isinstance(response, list) and response and response[0].get('status') == 'Success':
         return True
     else:
         raise Exception(f"SMS API returned unexpected response: {response}")

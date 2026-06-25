@@ -1,70 +1,112 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<a href="/farmer/orders/" style="display: inline-block; margin-bottom: 1rem; color: var(--forest-green); text-decoration: none; font-size: 0.9rem; font-weight: 600;">← Back to Orders</a>
+<a href="/farmer/orders/" style="display: inline-block; margin-bottom: 1rem; color: var(--green-600); text-decoration: none; font-size: 0.9rem; font-weight: 600;">← Back to Orders</a>
 
-<h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Order #{{ order.id }}</h1>
-<p style="color: var(--slate-gray); margin-bottom: 1.5rem;">
+<h1 style="font-size: 1.6rem; font-weight: 800; color: var(--green-900); margin-bottom: 0.5rem;">Order #{{ order.id }}</h1>
+<p style="color: var(--gray-600); margin-bottom: 1.5rem;">
     {{ order.created_at|date:"M d, Y" }} at {{ order.created_at|date:"g:i A" }}
-    · Status: <strong>{{ order.get_status_display }}</strong>
+    · Status: <strong style="color: var(--green-800);">{{ order.get_status_display }}</strong>
 </p>
 
 <!-- Consumer Info -->
-<div style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem;">
-    <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">Consumer</h2>
-    <p style="font-size: 0.95rem;">Phone: {{ order.consumer.phone }}</p>
+<div class="card" style="padding: 1rem; margin-bottom: 1rem;">
+    <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--green-900);">Consumer</h2>
+    <p style="font-size: 0.95rem;">Phone: <strong>{{ order.consumer.phone }}</strong></p>
     {% if order.delivery_address_snapshot %}
-    <p style="font-size: 0.85rem; color: var(--slate-gray); margin-top: 0.25rem;">
+    <p style="font-size: 0.85rem; color: var(--gray-600); margin-top: 0.25rem;">
         Delivery: {{ order.delivery_address_snapshot.area }}, {{ order.delivery_address_snapshot.county }}
+        {% if order.delivery_address_snapshot.landmark %} · {{ order.delivery_address_snapshot.landmark }}{% endif %}
     </p>
     {% endif %}
 </div>
 
 <!-- Order Items -->
-<div style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem;">
-    <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Items</h2>
+<div class="card" style="padding: 1rem; margin-bottom: 1rem;">
+    <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--green-900);">Items</h2>
     {% for item in items %}
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--gray-200);">
         <div>
-            <span style="font-weight: 600; font-size: 0.95rem;">{{ item.product_name }}</span>
-            <span style="color: var(--slate-gray); font-size: 0.85rem;">x{{ item.quantity|floatformat:"-2" }} {{ item.unit }}</span>
+            <span style="font-weight: 700; font-size: 0.95rem;">{{ item.product_name }}</span>
+            <span style="color: var(--gray-600); font-size: 0.85rem;">x{{ item.quantity|floatformat:"-2" }} {{ item.unit }}</span>
         </div>
-        <span style="font-weight: 600;">KSh {{ item.price|floatformat:2 }}</span>
+        <span style="font-weight: 700;">KSh {{ item.price|floatformat:2 }}</span>
     </div>
     {% endfor %}
 </div>
 
 <!-- Price -->
-<div style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
-    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.9rem;">
-        <span style="color: var(--slate-gray);">Subtotal</span>
+<div class="card" style="padding: 1rem; margin-bottom: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem; font-size: 0.9rem;">
+        <span style="color: var(--gray-600);">Subtotal</span>
         <span>KSh {{ order.subtotal|floatformat:2 }}</span>
     </div>
-    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.9rem;">
-        <span style="color: var(--slate-gray);">Delivery Fee</span>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem; font-size: 0.9rem;">
+        <span style="color: var(--gray-600);">Delivery Fee</span>
         <span>KSh {{ order.delivery_fee|floatformat:2 }}</span>
     </div>
-    <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--color-border); padding-top: 0.5rem; margin-top: 0.5rem; font-weight: 700; font-size: 1.1rem;">
+    <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--gray-200); padding-top: 0.5rem; margin-top: 0.5rem; font-weight: 800; font-size: 1.1rem;">
         <span>Total</span>
-        <span style="color: var(--forest-green);">KSh {{ order.total|floatformat:2 }}</span>
+        <span style="color: var(--green-800);">KSh {{ order.total|floatformat:2 }}</span>
     </div>
 </div>
 
-<!-- Action Buttons -->
+<!-- Action Buttons — Now prominent and impossible to miss -->
 {% if order.status == 'pending' %}
-<div style="display: flex; gap: 0.75rem;">
+<div style="display: flex; gap: 0.75rem; margin-bottom: 1rem;">
     <form method="POST" style="flex: 1;">
         {% csrf_token %}
         <input type="hidden" name="action" value="accept">
-        <button type="submit" style="width: 100%; padding: 1rem; background-color: var(--forest-green); color: white; border: none; border-radius: 4px; font-size: 1.1rem; font-weight: 700; cursor: pointer;">Accept Order</button>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.1rem;">Accept Order</button>
     </form>
     <form method="POST" style="flex: 1;" onsubmit="return confirmDecline()">
         {% csrf_token %}
         <input type="hidden" name="action" value="decline">
         <input type="hidden" name="decline_reason" id="decline_reason" value="">
-        <button type="submit" style="width: 100%; padding: 1rem; background-color: #dc3545; color: white; border: none; border-radius: 4px; font-size: 1.1rem; font-weight: 700; cursor: pointer;">Decline</button>
+        <button type="submit" style="width: 100%; padding: 1rem; background: #dc3545; color: white; border: none; border-radius: var(--radius-sm); font-size: 1.1rem; font-weight: 700; cursor: pointer;">Decline</button>
     </form>
 </div>
+
+{% elif order.status == 'confirmed' %}
+<form method="POST" style="margin-bottom: 1rem;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="ready">
+    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.1rem;">Mark as Ready for Pickup</button>
+</form>
+
+{% elif order.status == 'ready_for_pickup' %}
+<div style="margin-bottom: 1rem;">
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="request_pickup">
+        <button type="submit" class="btn btn-cta" style="width: 100%; padding: 1rem; font-size: 1.1rem;">Request Pickup</button>
+    </form>
+    <p style="text-align: center; margin-top: 0.75rem; font-size: 0.85rem; color: var(--gray-600);">Platform will assign a courier to deliver this order.</p>
+</div>
+
+{% elif order.status == 'pickup_requested' or order.status == 'courier_assigned' or order.status == 'in_transit' %}
+<div class="card" style="padding: 1.5rem; text-align: center; background: var(--green-100);">
+    <p style="font-weight: 700; font-size: 1.1rem; color: var(--green-800);">🚚 Courier is handling delivery.</p>
+    <p style="font-size: 0.9rem; color: var(--gray-600); margin-top: 0.25rem;">Current status: {{ order.get_status_display }}</p>
+</div>
+
+{% elif order.status == 'delivered' %}
+<div class="card" style="padding: 1.5rem; text-align: center; background: #d4edda;">
+    <p style="font-weight: 700; font-size: 1.1rem; color: #155724;">✅ Order delivered successfully.</p>
+    <p style="font-size: 0.9rem; color: #155724; margin-top: 0.25rem;">Payout will be processed automatically.</p>
+</div>
+
+{% elif order.status == 'farmer_declined' %}
+<div class="card" style="padding: 1.5rem; text-align: center; background: #f8d7da;">
+    <p style="font-weight: 700; font-size: 1.1rem; color: #721c24;">You declined this order.</p>
+    {% if order.decline_reason %}<p style="font-size: 0.9rem; color: #721c24;">Reason: {{ order.decline_reason }}</p>{% endif %}
+</div>
+
+{% elif order.status == 'auto_cancelled' or order.status == 'consumer_cancelled' %}
+<div class="card" style="padding: 1.5rem; text-align: center; background: #f8d7da;">
+    <p style="font-weight: 700; font-size: 1.1rem; color: #721c24;">This order was cancelled.</p>
+</div>
+{% endif %}
 
 <script>
 function confirmDecline() {
@@ -76,43 +118,4 @@ function confirmDecline() {
     return false;
 }
 </script>
-
-{% elif order.status == 'confirmed' %}
-<form method="POST">
-    {% csrf_token %}
-    <input type="hidden" name="action" value="ready">
-    <button type="submit" style="width: 100%; padding: 1rem; background-color: var(--forest-green); color: white; border: none; border-radius: 4px; font-size: 1.1rem; font-weight: 700; cursor: pointer;">Mark as Ready for Pickup</button>
-</form>
-
-{% elif order.status == 'ready_for_pickup' %}
-<form method="POST">
-    {% csrf_token %}
-    <input type="hidden" name="action" value="request_pickup">
-    <button type="submit" style="width: 100%; padding: 1rem; background-color: var(--sunrise-orange); color: white; border: none; border-radius: 4px; font-size: 1.1rem; font-weight: 700; cursor: pointer;">Request Pickup</button>
-</form>
-<p style="text-align: center; margin-top: 1rem; font-size: 0.85rem; color: var(--slate-gray);">Platform will assign a courier to deliver this order.</p>
-
-{% elif order.status == 'pickup_requested' or order.status == 'courier_assigned' or order.status == 'in_transit' %}
-<div style="text-align: center; padding: 1rem; background: var(--pale-mint); border-radius: 8px;">
-    <p style="font-weight: 600; color: var(--forest-green);">🚚 Courier is handling delivery.</p>
-    <p style="font-size: 0.85rem; color: var(--slate-gray); margin-top: 0.25rem;">Current status: {{ order.get_status_display }}</p>
-</div>
-
-{% elif order.status == 'delivered' %}
-<div style="text-align: center; padding: 1rem; background: #d4edda; border-radius: 8px;">
-    <p style="font-weight: 600; color: #155724;">✅ Order delivered successfully.</p>
-    <p style="font-size: 0.85rem; color: #155724; margin-top: 0.25rem;">Payout will be processed automatically.</p>
-</div>
-
-{% elif order.status == 'farmer_declined' %}
-<div style="text-align: center; padding: 1rem; background: #f8d7da; border-radius: 8px;">
-    <p style="font-weight: 600; color: #721c24;">You declined this order.</p>
-    {% if order.decline_reason %}<p style="font-size: 0.85rem; color: #721c24;">Reason: {{ order.decline_reason }}</p>{% endif %}
-</div>
-
-{% elif order.status == 'auto_cancelled' or order.status == 'consumer_cancelled' %}
-<div style="text-align: center; padding: 1rem; background: #f8d7da; border-radius: 8px;">
-    <p style="font-weight: 600; color: #721c24;">This order was cancelled.</p>
-</div>
-{% endif %}
 {% endblock %}

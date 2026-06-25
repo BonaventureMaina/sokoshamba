@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils import timezone
+from datetime import timedelta
 import secrets
 
 
@@ -41,6 +43,11 @@ class CourierAssignment(models.Model):
     assigned_at = models.DateTimeField(auto_now_add=True)
     picked_up_at = models.DateTimeField(blank=True, null=True)
     delivered_at = models.DateTimeField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.status_link_expires:
+            self.status_link_expires = timezone.now() + timedelta(hours=6)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Courier for Order {self.order.id} ({self.status})"
