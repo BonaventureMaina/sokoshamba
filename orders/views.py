@@ -303,3 +303,43 @@ def farmer_earnings(request):
         'total_earned': total_earned,
         'pending_earned': pending_earned,
     })
+
+@login_required
+def reorder(request, order_id):
+    order = get_object_or_404(Order, id=order_id, consumer=request.user)
+    if order.status not in ['delivered', 'auto_cancelled', 'consumer_cancelled', 'farmer_declined']:
+        return JsonResponse({'success': False, 'message': 'Order cannot be reordered.'}, status=400)
+
+    cart = get_or_create_cart(request)
+
+    # Enforce single-farmer: ensure cart is empty or already contains items from the same farmer
+    existing = cart.items.select_related('product__farmer').first()
+    if existing and existing.product.farmer_id != order.farmer_id:
+        return JsonResponse({
+            'success': False,
+            'message': f'Your cart contains items from {existing.product.farmer.farm_name}. Complete that order first.'
+        }, status=409)
+
+    added = 0
+    skipped = 0
+    for item in order.items.all():
+        product = item.product
+        if not product.is_active or not product.farmer.is_active or product.farmer.verification_status != 'verified':
+            skipped += 1
+            continue
+        cart_item, created = CartItem.objects.get_or_create(
+            cart=cart,
+            product=product,
+            defaults={'quantity': item.quantity}
+        )
+        if not created:
+            cart_item.quantity = item.quantity
+            cart_item.save()
+        added += 1
+
+    cart.save()
+
+    msg = f'{added} item(s) added to cart.'
+    if skipped:
+        msg += f' {skipped} item(s) are no longer available.'
+    return JsonResponse({'success': True, 'message': msg})

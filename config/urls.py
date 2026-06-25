@@ -12,7 +12,7 @@ from orders.views import (
     checkout, initiate_payment, mpesa_callback,
     order_list, order_detail,
     farmer_order_list, farmer_order_detail,
-    farmer_earnings,
+    farmer_earnings, reorder,
 )
 from logistics.views import courier_status
 from reviews.views import submit_review
@@ -39,6 +39,7 @@ urlpatterns = [
     path('farmer/products/edit/<int:product_id>/', farmer_product_edit, name='farmer_product_edit'),
     path('farmer/earnings/', farmer_earnings, name='farmer_earnings'),
     path('order/<int:order_id>/review/', submit_review, name='submit_review'),
+    path('order/<int:order_id>/reorder/', reorder, name='reorder'),
     path('terms/', terms, name='terms'),
     path('privacy/', privacy, name='privacy'),
 ]

@@ -31,9 +31,11 @@
         {% else %}
         <p style="margin-top: 0.75rem; font-size: 0.9rem; color: var(--green-800);">✅ Reviewed — Thank you!</p>
         {% endif %}
+        <button onclick="reorder({{ order.id }})" class="btn btn-primary" style="display: inline-block; margin-top: 0.75rem;">🛒 Buy Again</button>
     {% elif 'cancelled' in order.status or 'declined' in order.status %}
         <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">❌</div>
         <p style="font-weight: 700; font-size: 1.1rem; color: #721c24;">Cancelled — {{ order.get_status_display }}</p>
+        <button onclick="reorder({{ order.id }})" class="btn btn-primary" style="display: inline-block; margin-top: 0.75rem;">🛒 Buy Again</button>
     {% endif %}
 </div>
 
@@ -86,4 +88,48 @@
         <span style="color: var(--green-800);">KSh {{ order.total|floatformat:2 }}</span>
     </div>
 </div>
+
+<script>
+    function reorder(orderId) {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.textContent = 'Adding…';
+
+        fetch('/order/' + orderId + '/reorder/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message);
+                setTimeout(() => { window.location.href = '/cart/'; }, 1200);
+            } else {
+                showToast(data.message || 'Could not reorder.', 'error');
+                btn.disabled = false;
+                btn.textContent = '🛒 Buy Again';
+            }
+        })
+        .catch(() => {
+            showToast('Network error. Please try again.', 'error');
+            btn.disabled = false;
+            btn.textContent = '🛒 Buy Again';
+        });
+    }
+
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:' + (type === 'error' ? '#dc3545' : '#2c3e50') + ';color:white;padding:0.75rem 1.5rem;border-radius:2rem;font-size:0.9rem;font-weight:600;z-index:1000;opacity:0;transition:opacity 0.3s;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => { toast.style.opacity = '1'; });
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => { document.body.removeChild(toast); }, 300);
+        }, 2500);
+    }
+</script>
 {% endblock %}
