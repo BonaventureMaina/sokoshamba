@@ -2,7 +2,7 @@ from datetime import timedelta
 import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponseForbidden
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -343,3 +343,22 @@ def reorder(request, order_id):
     if skipped:
         msg += f' {skipped} item(s) are no longer available.'
     return JsonResponse({'success': True, 'message': msg})
+
+@require_GET
+def check_order(request):
+    checkout_request_id = request.GET.get('checkout_request_id')
+    if not checkout_request_id:
+        return JsonResponse({'success': False, 'message': 'Missing checkout_request_id.'}, status=400)
+
+    # Check if any payment exists with this checkout_request_id and is completed
+    payment = MpesaPayment.objects.filter(checkout_request_id=checkout_request_id, status='completed').first()
+    if payment:
+        return JsonResponse({'success': True, 'order_id': payment.order.id})
+    else:
+        return JsonResponse({'success': False, 'message': 'Payment not yet confirmed.'})
+
+@csrf_exempt
+@require_POST
+def test_callback(request):
+    from django.http import HttpResponse
+    return HttpResponse("OK")

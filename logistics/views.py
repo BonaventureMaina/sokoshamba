@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.utils import timezone
+from orders.models import Payout
 from .models import CourierAssignment
 
 
@@ -28,6 +29,18 @@ def courier_status(request, token):
             order.status = 'delivered'
             order.delivered_at = timezone.now()
             order.save()
+            # Create automatic payout (Decision 7)
+            commission_rate = 0.15  # 15% take rate
+            payout_amount = order.total * (1 - commission_rate)
+            Payout.objects.get_or_create(
+                order=order,
+                defaults={
+                    'farmer': order.farmer,
+                    'amount': payout_amount,
+                    'phone_number': order.farmer.user.phone,
+                    'status': 'completed',
+                }
+            )
         return redirect('courier_status', token=token)
 
     context = {

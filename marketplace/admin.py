@@ -40,3 +40,11 @@ class CartAdmin(admin.ModelAdmin):
 class CartItemAdmin(admin.ModelAdmin):
     list_display = ('cart', 'product', 'quantity', 'added_at')
     search_fields = ('product__name',)
+
+from .models import PendingCheckout
+
+@admin.register(PendingCheckout)
+class PendingCheckoutAdmin(admin.ModelAdmin):
+    list_display = ('checkout_request_id', 'phone', 'total', 'created_at')
+    search_fields = ('phone', 'checkout_request_id')
+    readonly_fields = ('created_at',)

@@ -4,7 +4,6 @@
 <h1 class="page-title">Checkout</h1>
 <p class="page-subtitle">Review your order and pay with M‑Pesa</p>
 
-<!-- Order Summary -->
 <div class="card" style="padding: 1rem; margin-bottom: 1rem;">
     <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--green-900);">Order Summary</h2>
     {% for item in items %}
@@ -30,33 +29,33 @@
     </div>
 </div>
 
-<!-- Delivery Address -->
 <div class="card" style="padding: 1rem; margin-bottom: 1rem;">
     <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--green-900);">Delivery Address</h2>
-    <label for="county" style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.15rem;">County</label>
-    <input type="text" id="county" name="county" placeholder="e.g. Nairobi" required
-           style="width: 100%; padding: 0.65rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); font-size: 0.9rem; margin-bottom: 0.75rem; box-sizing: border-box;">
-
-    <label for="area" style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.15rem;">Area / Estate</label>
-    <input type="text" id="area" name="area" placeholder="e.g. Kilimani, Westlands" required
-           style="width: 100%; padding: 0.65rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); font-size: 0.9rem; margin-bottom: 0.75rem; box-sizing: border-box;">
-
-    <label for="landmark" style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.15rem;">Landmark (optional)</label>
-    <input type="text" id="landmark" name="landmark" placeholder="e.g. Near KCB Bank"
-           style="width: 100%; padding: 0.65rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); font-size: 0.9rem; margin-bottom: 0.75rem; box-sizing: border-box;">
-
-    <label for="instructions" style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.15rem;">Delivery Instructions (optional)</label>
-    <input type="text" id="instructions" name="instructions" placeholder="e.g. Blue gate, call on arrival"
-           style="width: 100%; padding: 0.65rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); font-size: 0.9rem; margin-bottom: 0.5rem; box-sizing: border-box;">
+    <div class="input-group">
+        <label for="county">County</label>
+        <input type="text" id="county" name="county" placeholder="e.g. Nairobi" required>
+    </div>
+    <div class="input-group">
+        <label for="area">Area / Estate</label>
+        <input type="text" id="area" name="area" placeholder="e.g. Kilimani, Westlands" required>
+    </div>
+    <div class="input-group">
+        <label for="landmark">Landmark (optional)</label>
+        <input type="text" id="landmark" name="landmark" placeholder="e.g. Near KCB Bank">
+    </div>
+    <div class="input-group">
+        <label for="instructions">Delivery Instructions (optional)</label>
+        <input type="text" id="instructions" name="instructions" placeholder="e.g. Blue gate, call on arrival">
+    </div>
 </div>
 
-<!-- Payment -->
 <div id="payment-section" class="card" style="padding: 1rem;">
     <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--green-900);">Pay with M‑Pesa</h2>
-    <label for="phone" style="display: block; font-weight: 700; margin-bottom: 0.25rem; font-size: 0.9rem;">M‑Pesa Phone Number</label>
-    <p style="font-size: 0.8rem; color: var(--gray-600); margin-bottom: 0.5rem;">Enter the phone number where you'll receive the STK Push.</p>
-    <input type="tel" id="phone" name="phone" placeholder="+254700000000" value="+254700000000"
-           style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); font-size: 1rem; margin-bottom: 1rem; box-sizing: border-box;">
+    <div class="input-group">
+        <label for="phone">M‑Pesa Phone Number</label>
+        <input type="tel" id="phone" name="phone" placeholder="+254700000000" value="+254700000000">
+        <p style="font-size: 0.8rem; color: var(--gray-600); margin-top: 0.25rem;">Enter the phone number where you'll receive the STK Push.</p>
+    </div>
     <button onclick="pay()" class="btn btn-cta" style="width: 100%;">Pay KSh {{ total|floatformat:2 }}</button>
     <p id="pay-message" style="margin-top: 1rem; font-size: 0.85rem; color: var(--gray-600); text-align: center;"></p>
 </div>
@@ -109,12 +108,31 @@
                 document.getElementById('pay-message').textContent = data.message || 'Payment failed.';
                 return;
             }
+
             document.getElementById('pay-message').textContent = 'Check your phone and enter your M‑Pesa PIN.';
-            setTimeout(() => {
-                document.getElementById('payment-section').style.display = 'none';
-                document.getElementById('success-section').style.display = 'block';
-            }, 5000);
+            pollForOrder(data.checkout_request_id);
         });
+    }
+
+    function pollForOrder(checkoutRequestId) {
+        let attempts = 0;
+        const maxAttempts = 60;
+        const interval = setInterval(() => {
+            fetch('/checkout/check/?checkout_request_id=' + encodeURIComponent(checkoutRequestId))
+            .then(r => r.json())
+            .then(result => {
+                if (result.success) {
+                    clearInterval(interval);
+                    document.getElementById('payment-section').style.display = 'none';
+                    document.getElementById('success-section').style.display = 'block';
+                }
+            });
+            attempts++;
+            if (attempts >= maxAttempts) {
+                clearInterval(interval);
+                document.getElementById('pay-message').textContent = 'Payment is taking longer than expected. Please check your orders page or contact support.';
+            }
+        }, 1000);
     }
 </script>
 {% endblock %}

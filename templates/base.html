@@ -42,7 +42,6 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* ── Header ── */
         header {
             background: linear-gradient(135deg, var(--green-800) 0%, var(--green-900) 100%);
             color: white;
@@ -71,7 +70,7 @@
 
         .logo-icon { font-size: 1.6rem; }
 
-        nav { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+        nav { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
 
         nav a {
             color: rgba(255,255,255,0.9);
@@ -85,7 +84,15 @@
 
         nav a:hover { background: rgba(255,255,255,0.15); color: white; }
 
-        /* ── Main ── */
+        .user-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 0.3rem 0.7rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 0.25rem;
+        }
+
         main {
             flex: 1;
             padding: 1.5rem 1rem;
@@ -94,7 +101,6 @@
             width: 100%;
         }
 
-        /* ── Footer ── */
         footer {
             background: var(--charcoal);
             color: rgba(255,255,255,0.7);
@@ -112,7 +118,6 @@
 
         footer a:hover { color: white; }
 
-        /* ── Shared Components ── */
         .card {
             background: white;
             border-radius: var(--radius-md);
@@ -216,7 +221,6 @@
             margin-bottom: 1.5rem;
         }
 
-        /* ── Form Elements ── */
         .input-group {
             margin-bottom: 1rem;
         }
@@ -234,7 +238,7 @@
         .input-group select {
             width: 100%;
             padding: 0.75rem;
-            border: 1px solid var(--gray-200);
+            border: 1.5px solid #ced4da;
             border-radius: var(--radius-sm);
             font-size: 0.95rem;
             font-family: inherit;
@@ -246,8 +250,8 @@
         .input-group textarea:focus,
         .input-group select:focus {
             outline: none;
-            border-color: var(--green-400);
-            box-shadow: 0 0 0 3px rgba(82,183,136,0.15);
+            border-color: var(--green-600);
+            box-shadow: 0 0 0 3px rgba(45,106,79,0.15);
         }
 
         .error-msg {
@@ -273,6 +277,7 @@
         </a>
         <nav>
             {% if user.is_authenticated %}
+                <span class="user-badge">{{ user.phone }}</span>
                 {% if user.role == 'farmer' %}
                     <a href="/farmer/products/">My Products</a>
                     <a href="/farmer/orders/">Orders</a>
