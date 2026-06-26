@@ -25,12 +25,12 @@
         <!-- Quantity & Remove -->
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
             <div style="display: flex; align-items: center; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); overflow: hidden;">
-                <button onclick="updateQty({{ item.id }}, -1, {{ item.product.price }})" style="width: 32px; height: 32px; border: none; background: var(--gray-100); font-size: 0.9rem; cursor: pointer; color: var(--charcoal);">−</button>
+                <button onclick="updateQty({{ item.id }}, -1, {{ item.product.price }})" class="btn" style="padding: 0.3rem 0.6rem; background: var(--gray-100); font-size: 0.85rem; border-radius: 0;">−</button>
                 <span id="qty-{{ item.id }}" style="width: 36px; text-align: center; font-weight: 700; font-size: 0.85rem;">{{ item.quantity|floatformat:"-2" }}</span>
-                <button onclick="updateQty({{ item.id }}, 1, {{ item.product.price }})" style="width: 32px; height: 32px; border: none; background: var(--gray-100); font-size: 0.9rem; cursor: pointer; color: var(--charcoal);">+</button>
+                <button onclick="updateQty({{ item.id }}, 1, {{ item.product.price }})" class="btn" style="padding: 0.3rem 0.6rem; background: var(--gray-100); font-size: 0.85rem; border-radius: 0;">+</button>
             </div>
             <span id="subtotal-{{ item.id }}" style="font-weight: 700; font-size: 0.85rem; color: var(--charcoal);">KSh {{ item.line_total|floatformat:2 }}</span>
-            <a href="#" onclick="removeItem({{ item.id }})" style="font-size: 0.7rem; color: #dc3545; text-decoration: none; font-weight: 600;">Remove</a>
+            <a href="#" onclick="removeItem({{ item.id }})" style="font-size: 0.75rem; color: #dc3545; text-decoration: none; font-weight: 600;">Remove</a>
         </div>
     </div>
     {% endfor %}
