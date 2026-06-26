@@ -1,4 +1,5 @@
 from django.db import models
+from encrypted_model_fields.fields import EncryptedCharField
 
 
 class Order(models.Model):
@@ -38,7 +39,7 @@ class Order(models.Model):
     delivery_fee = models.DecimalField(max_digits=10, decimal_places=2)
     total = models.DecimalField(max_digits=10, decimal_places=2)
     delivery_address_snapshot = models.JSONField()
-    consumer_phone_at_order = models.CharField(max_length=15)
+    consumer_phone_at_order = EncryptedCharField(max_length=15)
     created_at = models.DateTimeField(auto_now_add=True)
     confirmed_at = models.DateTimeField(blank=True, null=True)
     ready_at = models.DateTimeField(blank=True, null=True)
@@ -97,7 +98,7 @@ class MpesaPayment(models.Model):
     checkout_request_id = models.CharField(max_length=50, blank=True, null=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     mpesa_receipt_number = models.CharField(max_length=50, blank=True, null=True)
-    phone_number = models.CharField(max_length=15)
+    phone_number = EncryptedCharField(max_length=15)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     result_description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -131,7 +132,7 @@ class Payout(models.Model):
         related_name='payouts',
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    phone_number = models.CharField(max_length=15)
+    phone_number = EncryptedCharField(max_length=15)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     failure_reason = models.TextField(blank=True, null=True)
     retry_count = models.IntegerField(default=0)

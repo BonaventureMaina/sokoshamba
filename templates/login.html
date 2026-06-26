@@ -14,7 +14,7 @@
             {% csrf_token %}
             <div class="input-group">
                 <label for="phone">Phone Number</label>
-                <input type="tel" id="phone" name="phone" placeholder="+254700000000" required>
+                <input type="tel" id="phone" name="phone" placeholder="+254700000000" value="{{ phone|default:"" }}" required>
                 <p style="font-size: 0.8rem; color: var(--gray-600); margin-top: 0.25rem;">
                     Enter the phone number you used at checkout or sign-up.
                 </p>

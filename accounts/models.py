@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from encrypted_model_fields.fields import EncryptedCharField
 
 
 class UserManager(BaseUserManager):
@@ -31,7 +32,7 @@ class User(AbstractUser):
 
     username = None
     phone = models.CharField(max_length=15, unique=True)
-    email = models.EmailField(blank=True, null=True)
+    email = EncryptedCharField(max_length=254, blank=True, null=True)
     phone_verified = models.BooleanField(default=False)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
 
@@ -102,9 +103,9 @@ class DeliveryAddress(models.Model):
     )
     label = models.CharField(max_length=100, blank=True, null=True)
     county = models.CharField(max_length=100)
-    area = models.CharField(max_length=150)
-    landmark = models.CharField(max_length=200, blank=True, null=True)
-    instructions = models.TextField(blank=True, null=True)
+    area = EncryptedCharField(max_length=150)
+    landmark = EncryptedCharField(max_length=200, blank=True, null=True)
+    instructions = EncryptedCharField(max_length=500, blank=True, null=True)
     is_default = models.BooleanField(default=False)
 
     class Meta:

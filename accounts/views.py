@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect
+from django_ratelimit.decorators import ratelimit
 from django.contrib.auth import login, logout
 from django.utils import timezone
 from .models import User, OtpCode
 
 
+@ratelimit(key='ip', rate='5/m', block=True)
 def login_request(request):
     if request.user.is_authenticated:
         return redirect('home')
@@ -11,12 +13,12 @@ def login_request(request):
     if request.method == 'POST':
         phone = request.POST.get('phone', '').strip()
         if not phone:
-            return render(request, 'login.html', {'error': 'Enter your phone number.'})
+            return render(request, 'login.html', {'error': 'Enter your phone number.', 'phone': phone})
 
         try:
             user = User.objects.get(phone=phone)
         except User.DoesNotExist:
-            return render(request, 'login.html', {'error': 'No account found with that phone number.'})
+            return render(request, 'login.html', {'error': 'No account found with that phone number.', 'phone': phone})
 
         import random
         code = str(random.randint(100000, 999999))
