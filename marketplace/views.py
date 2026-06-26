@@ -1,4 +1,6 @@
 import os
+from PIL import Image
+from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
@@ -6,6 +8,18 @@ from django.views.decorators.http import require_POST
 from django.db.models import Avg
 from .models import Category, Product, ProductImage, Cart, CartItem, PendingCheckout
 from reviews.models import Review
+
+
+def validate_product_image(image):
+    # Check file size (max 5 MB)
+    if image.size > 5 * 1024 * 1024:
+        raise ValidationError('Image file too large (max 5 MB).')
+    # Check that it's actually an image
+    try:
+        img = Image.open(image)
+        img.verify()
+    except Exception:
+        raise ValidationError('Invalid image file. Please upload a JPEG or PNG.')
 
 
 def get_verified_farmer(user):
@@ -35,7 +49,6 @@ def product_list(request):
         products = products.filter(category_id=category_id)
     products = products.annotate(avg_rating=Avg('farmer__reviews__rating'))
 
-    # Pre-compute star display
     for product in products:
         avg = product.avg_rating
         if avg and avg > 0:
@@ -60,6 +73,7 @@ def product_detail(request, product_id):
         farmer__verification_status='verified'
     ).select_related('farmer__user').prefetch_related('images').first()
     if not product:
+        from django.http import Http404
         raise Http404("Product not found")
     reviews = Review.objects.filter(farmer=product.farmer).select_related('consumer').order_by('-created_at')[:5]
     context = {'product': product, 'reviews': reviews}
@@ -209,6 +223,7 @@ def farmer_product_add(request):
         # Handle uploaded image
         image_file = request.FILES.get('image')
         if image_file:
+            validate_product_image(image_file)
             ProductImage.objects.create(product=product, image=image_file)
 
         return redirect('farmer_products')
@@ -276,6 +291,7 @@ def farmer_product_edit(request, product_id):
         # Handle uploaded image
         image_file = request.FILES.get('image')
         if image_file:
+            validate_product_image(image_file)
             product.images.all().delete()
             ProductImage.objects.create(product=product, image=image_file)
 
