@@ -31,7 +31,7 @@ def courier_status(request, token):
             order.save()
             # Create automatic payout (Decision 7)
             commission_rate = 0.15  # 15% take rate
-            payout_amount = order.total * (1 - commission_rate)
+            payout_amount = order.subtotal * (1 - commission_rate)
             Payout.objects.get_or_create(
                 order=order,
                 defaults={

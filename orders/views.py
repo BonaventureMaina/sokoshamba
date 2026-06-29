@@ -295,6 +295,8 @@ def farmer_earnings(request):
         return HttpResponseForbidden("Access denied.")
 
     payouts = farmer.payouts.select_related('order').order_by('-created_at')
+    for p in payouts:
+        p.commission = float(p.order.subtotal) * 0.15
     total_earned = sum(p.amount for p in payouts if p.status == 'completed')
     pending_earned = sum(p.amount for p in payouts if p.status == 'pending')
 
