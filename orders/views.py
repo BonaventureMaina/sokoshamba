@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from marketplace.models import Cart, CartItem, PendingCheckout
 from marketplace.views import get_or_create_cart
+from marketplace.templatetags.phone_format import normalize_phone
 from accounts.models import User
 from .models import Order, OrderItem, MpesaPayment
 from .mpesa_service import initiate_stk_push, verify_callback_signature
@@ -50,7 +51,7 @@ def checkout(request):
 
 @require_POST
 def initiate_payment(request):
-    phone = request.POST.get('phone')
+    phone = normalize_phone(request.POST.get('phone'))
     if not phone:
         return JsonResponse({'success': False, 'message': 'Phone number is required.'}, status=400)
 

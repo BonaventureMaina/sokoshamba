@@ -53,7 +53,7 @@
     <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--green-900);">Pay with M‑Pesa</h2>
     <div class="input-group">
         <label for="phone">M‑Pesa Phone Number</label>
-        <input type="tel" id="phone" name="phone" placeholder="+254700000000" value="+254700000000">
+        <input type="tel" id="phone" name="phone" placeholder="e.g. 0712345678">
         <p style="font-size: 0.8rem; color: var(--gray-600); margin-top: 0.25rem;">Enter the phone number where you'll receive the STK Push.</p>
     </div>
     <button onclick="pay()" class="btn btn-cta" style="width: 100%;">Pay KSh {{ total|floatformat:2 }}</button>

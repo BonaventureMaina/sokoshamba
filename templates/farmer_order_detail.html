@@ -9,6 +9,33 @@
     · Status: <strong style="color: var(--green-800);">{{ order.get_status_display }}</strong>
 </p>
 
+<!-- Status Explanation -->
+<div style="background: var(--green-100); padding: 0.75rem 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; font-size: 0.85rem; color: var(--green-900);">
+    {% if order.status == 'pending' %}
+    <strong>New order!</strong> A consumer has placed an order from your farm. You have 30 minutes to accept it, otherwise it will be automatically cancelled and the consumer refunded.
+    {% elif order.status == 'confirmed' %}
+    <strong>Order confirmed.</strong> You have accepted this order. Prepare the produce and mark it as ready for pickup when done.
+    {% elif order.status == 'preparing' %}
+    <strong>Preparing.</strong> You are currently preparing this order. Mark it as ready for pickup once the produce is packed.
+    {% elif order.status == 'ready_for_pickup' %}
+    <strong>Ready for pickup.</strong> Your produce is packed and ready. Request a pickup so a courier can deliver it to the consumer.
+    {% elif order.status == 'pickup_requested' %}
+    <strong>Pickup requested.</strong> A courier will be assigned shortly. You can relax – the platform is handling delivery.
+    {% elif order.status == 'courier_assigned' %}
+    <strong>Courier assigned.</strong> A rider is on the way to pick up the produce. They will update the delivery status.
+    {% elif order.status == 'in_transit' %}
+    <strong>On the way!</strong> The courier is delivering the order to the consumer. No further action is needed from you.
+    {% elif order.status == 'delivered' %}
+    <strong>Delivered!</strong> The order has been successfully delivered. Your payout has been processed.
+    {% elif order.status == 'auto_cancelled' %}
+    <strong>Cancelled – no response.</strong> You did not accept the order within 30 minutes, so it was automatically cancelled. To avoid losing future orders, keep your phone nearby.
+    {% elif order.status == 'farmer_declined' %}
+    <strong>Declined.</strong> You declined this order. The consumer has been refunded.
+    {% elif order.status == 'consumer_cancelled' %}
+    <strong>Cancelled by consumer.</strong> The consumer cancelled this order before you confirmed it.
+    {% endif %}
+</div>
+
 <!-- Consumer Info -->
 <div class="card" style="padding: 1rem; margin-bottom: 1rem;">
     <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--green-900);">Consumer</h2>
@@ -51,7 +78,7 @@
     </div>
 </div>
 
-<!-- Action Buttons — Now prominent and impossible to miss -->
+<!-- Action Buttons -->
 {% if order.status == 'pending' %}
 <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem;">
     <form method="POST" style="flex: 1;">

@@ -1,3 +1,4 @@
+{% load phone_format %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -277,7 +278,20 @@
         </a>
         <nav>
             {% if user.is_authenticated %}
+                
+                {% if user.role == 'farmer' %}
+                <span class="user-badge">
+                    {% if user.farmer_profile.photo_url %}
+                    <img src="{{ user.farmer_profile.photo_url.url }}" alt="{{ user.farmer_profile.farm_name }}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 0.25rem;">
+                    {% endif %}
+                    {{ user.farmer_profile.farm_name }}
+                </span>
+                {% elif user.role == 'consumer' %}
+                <span class="user-badge">Hello, {{ user.consumer_profile.name|default:"Shopper" }}!</span>
+                {% else %}
                 <span class="user-badge">{{ user.phone }}</span>
+                {% endif %}
+
                 {% if user.role == 'farmer' %}
                     <a href="/farmer/products/">My Products</a>
                     <a href="/farmer/orders/">Orders</a>

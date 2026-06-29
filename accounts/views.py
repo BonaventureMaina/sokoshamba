@@ -3,6 +3,7 @@ from django_ratelimit.decorators import ratelimit
 from django.contrib.auth import login, logout
 from django.utils import timezone
 from .models import User, OtpCode
+from marketplace.templatetags.phone_format import normalize_phone
 
 
 @ratelimit(key='ip', rate='5/m', block=True)
@@ -11,7 +12,7 @@ def login_request(request):
         return redirect('home')
 
     if request.method == 'POST':
-        phone = request.POST.get('phone', '').strip()
+        phone = normalize_phone(request.POST.get('phone', '').strip())
         if not phone:
             return render(request, 'login.html', {'error': 'Enter your phone number.', 'phone': phone})
 
