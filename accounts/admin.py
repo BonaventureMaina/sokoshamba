@@ -37,7 +37,7 @@ class ConsumerProfileAdmin(admin.ModelAdmin):
 
 @admin.register(FarmerProfile)
 class FarmerProfileAdmin(admin.ModelAdmin):
-    list_display = ('farm_name', 'user_phone', 'county', 'verification_status', 'is_active')
+    list_display = ('farm_name', 'user_phone', 'county', 'verification_status', 'terms_accepted', 'is_active')
     list_filter = ('verification_status', 'is_active', 'county')
     search_fields = ('farm_name', 'user__phone')
     readonly_fields = ('verified_at',)
@@ -50,7 +50,7 @@ class FarmerProfileAdmin(admin.ModelAdmin):
         """Owner only fields – Operator cannot see or change them."""
         fields = super().get_readonly_fields(request, obj)
         if not request.user.is_superuser:
-            fields += ('is_active', 'verification_notes', 'verified_by')
+            fields += ('is_active', 'verification_notes', 'verified_by', 'terms_accepted')
         return fields
 
     def save_model(self, request, obj, form, change):

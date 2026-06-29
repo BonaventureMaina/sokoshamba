@@ -6,9 +6,9 @@ from notifications.sms_service import send_sms
 
 @admin.register(Rider)
 class RiderAdmin(admin.ModelAdmin):
-    list_display = ('name', 'phone', 'vehicle_type', 'is_active')
+    list_display = ('name', 'phone', 'id_number', 'vehicle_type', 'is_active')
     list_filter = ('is_active',)
-    search_fields = ('name', 'phone')
+    search_fields = ('name', 'phone', 'id_number')
 
 
 @admin.register(CourierAssignment)

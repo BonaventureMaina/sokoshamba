@@ -89,6 +89,7 @@ class FarmerProfile(models.Model):
         null=True,
         related_name='verified_farmers',
     )
+    terms_accepted = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):

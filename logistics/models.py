@@ -7,6 +7,7 @@ import secrets
 class Rider(models.Model):
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
+    id_number = models.CharField(max_length=20, blank=True, null=True)
     vehicle_type = models.CharField(max_length=50, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
