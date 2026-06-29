@@ -44,11 +44,11 @@
     </div>
     <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem;">
         <span style="color: var(--gray-600);">Delivery Fee</span>
-        <span style="font-weight: 600;">TBD</span>
+        <span style="font-weight: 600;">KSh 150.00</span>
     </div>
     <div style="border-top: 1px solid var(--gray-200); padding-top: 0.75rem; display: flex; justify-content: space-between;">
         <span style="font-weight: 800; font-size: 1.1rem;">Total</span>
-        <span id="cartTotal" style="font-weight: 800; font-size: 1.1rem; color: var(--green-800);">KSh {{ subtotal|floatformat:2 }}</span>
+        <span id="cartTotal" style="font-weight: 800; font-size: 1.1rem; color: var(--green-800);">KSh {{ subtotal|add:150|floatformat:2 }}</span>
     </div>
 </div>
 

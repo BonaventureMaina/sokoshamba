@@ -49,10 +49,6 @@
             <span>Your subtotal: KSh {{ payout.order.subtotal|floatformat:2 }}</span>
             <span>Commission (15%): -KSh {{ payout.commission|floatformat:2 }}</span>
         </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--gray-600);">
-            <span>Delivery fee (not yours):</span>
-            <span>KSh {{ payout.order.delivery_fee|floatformat:2 }}</span>
-        </div>
         <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-top: 0.25rem; border-top: 1px solid var(--gray-200); padding-top: 0.5rem;">
             <strong>You received:</strong>
             <strong style="color: var(--green-800);">KSh {{ payout.amount|floatformat:2 }}</strong>

@@ -118,7 +118,11 @@ def add_to_cart(request):
     if existing_items and existing_items.product.farmer_id != product.farmer_id:
         return JsonResponse({
             'success': False,
-            'message': f'Your cart contains items from {existing_items.product.farmer.farm_name}. Clear your cart or complete that order before adding from a different farmer.',
+            'message': (
+                'Your cart has items from ' + existing_items.product.farmer.farm_name + '. '
+                'Each farmer’s products are delivered separately to keep them fresh. '
+                'Please complete that order or clear your cart before adding from ' + product.farmer.farm_name + '.'
+            ),
         }, status=409)
 
     cart_item, created = CartItem.objects.get_or_create(
