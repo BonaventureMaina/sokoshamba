@@ -66,6 +66,9 @@ def otp_verify(request):
             user.phone_verified = True
             user.save(update_fields=['phone_verified'])
 
+        # Extend session if "Remember me" checked
+        if request.POST.get('remember_me'):
+            request.session.set_expiry(60 * 60 * 24 * 30)  # 30 days
         login(request, user)
         del request.session['login_phone']
 

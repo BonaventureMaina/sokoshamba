@@ -24,3 +24,12 @@ def local_phone(value):
         return value
     digits = value[4:]  # remove +254
     return f'07{digits[:2]} {digits[2:5]} {digits[5:]}'
+
+@register.filter(name='mask_phone')
+def mask_phone(value):
+    """Show only last 4 digits of a phone number."""
+    if not value:
+        return value
+    if len(value) > 4:
+        return '*' * (len(value) - 4) + value[-4:]
+    return value

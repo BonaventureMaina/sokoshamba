@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load phone_format %}
 
 {% block content %}
 <a href="/farmer/orders/" style="display: inline-block; margin-bottom: 1rem; color: var(--green-600); text-decoration: none; font-size: 0.9rem; font-weight: 600;">← Back to Orders</a>
@@ -39,7 +40,7 @@
 <!-- Consumer Info -->
 <div class="card" style="padding: 1rem; margin-bottom: 1rem;">
     <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--green-900);">Consumer</h2>
-    <p style="font-size: 0.95rem;">Phone: <strong>{{ order.consumer.phone }}</strong></p>
+    <p style="font-size: 0.95rem;">Phone: <strong>{{ order.consumer.phone|mask_phone }}</strong></p>
     {% if order.delivery_address_snapshot %}
     <p style="font-size: 0.85rem; color: var(--gray-600); margin-top: 0.25rem;">
         Delivery: {{ order.delivery_address_snapshot.area }}, {{ order.delivery_address_snapshot.county }}

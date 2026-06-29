@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load phone_format %}
 
 {% block content %}
 <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">My Orders</h1>
@@ -22,7 +23,7 @@
                 </span>
             </div>
             <p style="font-size: 0.9rem; color: var(--slate-gray); margin-bottom: 0.25rem;">
-                Consumer: {{ order.consumer.phone }}
+                Consumer: {{ order.consumer.phone|mask_phone }}
             </p>
             <p style="font-size: 0.9rem; color: var(--slate-gray); margin-bottom: 0.5rem;">
                 {{ order.created_at|date:"M d, Y" }} · {{ order.items.count }} item(s)

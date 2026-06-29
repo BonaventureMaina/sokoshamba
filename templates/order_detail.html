@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load phone_format %}
 
 {% block content %}
 <a href="/orders/" style="display: inline-block; margin-bottom: 1rem; color: var(--green-600); text-decoration: none; font-size: 0.9rem; font-weight: 600;">← Back to Orders</a>
@@ -49,6 +50,7 @@
     {% if order.delivery_address_snapshot.instructions %}
     <p style="font-size: 0.85rem; color: var(--gray-600);">Instructions: {{ order.delivery_address_snapshot.instructions }}</p>
     {% endif %}
+    <p style="font-size: 0.85rem; color: var(--gray-600); margin-top: 0.25rem;">Phone: {{ order.consumer_phone_at_order }}</p>
 </div>
 
 <!-- Order Items -->
