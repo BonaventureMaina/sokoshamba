@@ -52,7 +52,7 @@ class ConsumerProfile(models.Model):
         related_name='consumer_profile',
     )
     name = models.CharField(max_length=100)
-    profile_photo_url = models.ImageField(upload_to="farmer_photos/", blank=True, null=True)
+    profile_photo_url = models.ImageField(upload_to="consumer_photos/", blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -74,7 +74,7 @@ class FarmerProfile(models.Model):
     county = models.CharField(max_length=100)
     sub_county = models.CharField(max_length=100, blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
-    photo_url = models.ImageField(upload_to="farmer_photos/", blank=True, null=True)
+    photo_url = models.ImageField(upload_to="consumer_photos/", blank=True, null=True)
     verification_status = models.CharField(
         max_length=20,
         choices=VERIFICATION_STATUS_CHOICES,

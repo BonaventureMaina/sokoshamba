@@ -239,7 +239,8 @@
         .input-group select {
             width: 100%;
             padding: 0.75rem;
-            border: 1.5px solid #b0b8c1; background: #fdfdfd;
+            border: 1.5px solid #b0b8c1;
+            background: #fdfdfd;
             border-radius: var(--radius-sm);
             font-size: 0.95rem;
             font-family: inherit;
@@ -278,7 +279,6 @@
         </a>
         <nav>
             {% if user.is_authenticated %}
-                
                 {% if user.role == 'farmer' %}
                 <span class="user-badge">
                     {% if user.farmer_profile.photo_url %}
@@ -287,7 +287,12 @@
                     {{ user.farmer_profile.farm_name }}
                 </span>
                 {% elif user.role == 'consumer' %}
-                <span class="user-badge">Hello, {{ user.consumer_profile.name|default:"Shopper" }}!</span>
+                <span class="user-badge">
+                    {% if user.consumer_profile.profile_photo_url %}
+                    <img src="{{ user.consumer_profile.profile_photo_url.url }}" alt="{{ user.consumer_profile.name }}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 0.25rem;">
+                    {% endif %}
+                    Hello, {{ user.consumer_profile.name|default:"Shopper" }}!
+                </span>
                 {% else %}
                 <span class="user-badge">{{ user.phone }}</span>
                 {% endif %}
@@ -296,10 +301,12 @@
                     <a href="/farmer/products/">My Products</a>
                     <a href="/farmer/orders/">Orders</a>
                     <a href="/farmer/earnings/">Earnings</a>
+                    <a href="/farmer/profile/">Profile</a>
                 {% else %}
                     <a href="/products/">Browse</a>
                     <a href="/cart/">Cart</a>
                     <a href="/orders/">My Orders</a>
+                    <a href="/profile/">Profile</a>
                 {% endif %}
                 <a href="/logout/">Logout</a>
             {% else %}

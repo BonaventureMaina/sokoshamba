@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
 from django_ratelimit.decorators import ratelimit
 from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from .models import User, OtpCode
+from .models import User, OtpCode, ConsumerProfile
 from marketplace.templatetags.phone_format import normalize_phone
 
 
@@ -82,3 +83,66 @@ def otp_verify(request):
 def logout_view(request):
     logout(request)
     return redirect('home')
+
+@login_required
+def consumer_profile(request):
+    if request.user.role != 'consumer':
+        return redirect('home')
+
+    profile, _ = ConsumerProfile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+
+        profile.name = name
+        profile.save()
+
+        if email:
+            request.user.email = email
+            request.user.save()
+
+        # Handle profile photo upload
+        if 'photo' in request.FILES:
+            profile.profile_photo_url = request.FILES['photo']
+            profile.save()
+
+        return redirect('consumer_profile')
+
+    return render(request, 'consumer_profile.html', {'profile': profile})
+
+def get_verified_farmer(user):
+    """Return farmer profile if user is a verified farmer, else None."""
+    if user.is_authenticated and user.role == 'farmer':
+        try:
+            profile = user.farmer_profile
+            if profile.verification_status == 'verified' and profile.is_active:
+                return profile
+        except Exception:
+            pass
+    return None
+
+
+@login_required
+def farmer_profile(request):
+    farmer = get_verified_farmer(request.user)
+    if not farmer:
+        return redirect('home')
+
+    if request.method == 'POST':
+        farm_name = request.POST.get('farm_name', '').strip()
+        bio = request.POST.get('bio', '').strip()
+
+        if farm_name:
+            farmer.farm_name = farm_name
+        farmer.bio = bio
+        farmer.save()
+
+        # Handle photo upload
+        if 'photo' in request.FILES:
+            farmer.photo_url = request.FILES['photo']
+            farmer.save()
+
+        return redirect('farmer_profile')
+
+    return render(request, 'farmer_profile.html', {'farmer': farmer})

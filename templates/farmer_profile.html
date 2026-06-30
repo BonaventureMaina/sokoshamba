@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load file_utils %}
+
+{% block content %}
+<h1 class="page-title">Farm Profile</h1>
+<p class="page-subtitle">Update your farm details</p>
+
+<div class="card" style="padding: 1.5rem; max-width: 500px; margin: 0 auto;">
+    {% if error %}
+    <div class="error-msg">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="input-group">
+            <label for="farm_name">Farm Name</label>
+            <input type="text" id="farm_name" name="farm_name" value="{{ farmer.farm_name }}" placeholder="Your farm name" required>
+        </div>
+
+        <div class="input-group">
+            <label for="bio">Bio (optional)</label>
+            <textarea id="bio" name="bio" rows="3" placeholder="Tell customers about your farm">{{ farmer.bio|default:'' }}</textarea>
+        </div>
+
+        <div class="input-group">
+            <label for="photo">Profile Photo</label>
+            {% if farmer.photo_url %}
+            <p style="font-size: 0.85rem; margin-bottom: 0.5rem;">Current photo: {{ farmer.photo_url.name|filename }}</p>
+            {% endif %}
+            <input type="file" id="photo" name="photo" accept="image/*" style="padding: 0.5rem;">
+            <p style="font-size: 0.8rem; color: var(--gray-600); margin-top: 0.25rem;">JPEG or PNG recommended</p>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Save Changes</button>
+    </form>
+</div>
+{% endblock %}
