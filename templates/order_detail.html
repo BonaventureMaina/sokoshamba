@@ -13,6 +13,20 @@
         <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⏳</div>
         <p style="font-weight: 700; font-size: 1.1rem; color: #856404;">Awaiting Farmer Confirmation</p>
         <p style="font-size: 0.85rem; color: var(--gray-600); margin-top: 0.25rem;">The farmer has 30 minutes to respond.</p>
+        <button id="cancel-btn" onclick="showCancelForm()" class="btn" style="display: inline-block; margin-top: 0.75rem; background: #dc3545; color: white; font-size: 0.85rem; padding: 0.5rem 1rem;">Cancel Order</button>
+        <div id="cancel-form" style="display: none; margin-top: 0.75rem; text-align: left;">
+            <div class="card" style="padding: 1rem; background: #fff5f5; border: 1px solid #f8d7da;">
+                <p style="font-weight: 700; font-size: 0.9rem; color: #721c24; margin-bottom: 0.5rem;">Are you sure you want to cancel this order?</p>
+                <div class="input-group">
+                    <label for="cancel-reason" style="font-size: 0.85rem;">Reason (optional)</label>
+                    <input type="text" id="cancel-reason" placeholder="e.g. Ordered by mistake" style="font-size: 0.9rem;">
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="confirmCancel({{ order.id }})" class="btn" style="flex: 1; background: #dc3545; color: white; font-size: 0.85rem; padding: 0.5rem;">Yes, Cancel</button>
+                    <button onclick="hideCancelForm()" class="btn" style="flex: 1; background: var(--gray-200); color: var(--charcoal); font-size: 0.85rem; padding: 0.5rem;">Keep Order</button>
+                </div>
+            </div>
+        </div>
     {% elif order.status == 'confirmed' or order.status == 'preparing' %}
         <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🧑‍🌾</div>
         <p style="font-weight: 700; font-size: 1.1rem; color: var(--green-800);">Farmer is Preparing Your Order</p>
@@ -135,6 +149,32 @@
             toast.style.opacity = '0';
             setTimeout(() => { document.body.removeChild(toast); }, 300);
         }, 2500);
+    }
+
+    function showCancelForm() {
+        document.getElementById('cancel-btn').style.display = 'none';
+        document.getElementById('cancel-form').style.display = 'block';
+    }
+
+    function hideCancelForm() {
+        document.getElementById('cancel-btn').style.display = 'inline-block';
+        document.getElementById('cancel-form').style.display = 'none';
+    }
+
+    function confirmCancel(orderId) {
+        const reason = document.getElementById('cancel-reason').value.trim();
+
+        fetch('/orders/' + orderId + '/cancel/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: 'reason=' + encodeURIComponent(reason),
+        })
+        .then(() => {
+            window.location.reload();
+        });
     }
 </script>
 {% endblock %}

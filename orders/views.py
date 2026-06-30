@@ -365,3 +365,16 @@ def check_order(request):
 def test_callback(request):
     from django.http import HttpResponse
     return HttpResponse("OK")
+
+@login_required
+def cancel_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id, consumer=request.user, status='pending')
+    if request.method == 'POST':
+        reason = request.POST.get('reason', '').strip()
+        order.status = 'consumer_cancelled'
+        order.consumer_cancelled_at = timezone.now()
+        order.consumer_cancel_reason = reason
+        order.save()
+        # TODO: trigger refund in production
+        return redirect('order_detail', order_id=order.id)
+    return redirect('order_detail', order_id=order.id)

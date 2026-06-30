@@ -12,7 +12,7 @@ from orders.views import (
     checkout, initiate_payment, mpesa_callback,
     order_list, order_detail,
     farmer_order_list, farmer_order_detail,
-    farmer_earnings, reorder, check_order,
+    farmer_earnings, reorder, check_order, cancel_order,
 )
 from logistics.views import courier_status
 from reviews.views import submit_review, respond_to_review
@@ -31,6 +31,7 @@ urlpatterns = [
     path('webhooks/mpesa/callback/', mpesa_callback, name='mpesa_callback'),
     path('orders/', order_list, name='order_list'),
     path('orders/<int:order_id>/', order_detail, name='order_detail'),
+    path('orders/<int:order_id>/cancel/', cancel_order, name='cancel_order'),
     path('farmer/orders/', farmer_order_list, name='farmer_order_list'),
     path('farmer/orders/<int:order_id>/', farmer_order_detail, name='farmer_order_detail'),
     path('', include('accounts.urls')),

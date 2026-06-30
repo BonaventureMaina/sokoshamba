@@ -283,6 +283,8 @@
                 <span class="user-badge">
                     {% if user.farmer_profile.photo_url %}
                     <img src="{{ user.farmer_profile.photo_url.url }}" alt="{{ user.farmer_profile.farm_name }}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 0.25rem;">
+                    {% else %}
+                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.3); color: white; font-size: 12px; margin-right: 0.25rem; vertical-align: middle;">🧑‍🌾</span>
                     {% endif %}
                     {{ user.farmer_profile.farm_name }}
                 </span>
@@ -290,8 +292,10 @@
                 <span class="user-badge">
                     {% if user.consumer_profile.profile_photo_url %}
                     <img src="{{ user.consumer_profile.profile_photo_url.url }}" alt="{{ user.consumer_profile.name }}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 0.25rem;">
+                    {% else %}
+                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.3); color: white; font-size: 12px; margin-right: 0.25rem; vertical-align: middle;">👤</span>
                     {% endif %}
-                    Hello, {{ user.consumer_profile.name|default:"Shopper" }}!
+                    Hello, {{ user.consumer_profile.name|default:"Shopper" }}
                 </span>
                 {% else %}
                 <span class="user-badge">{{ user.phone }}</span>

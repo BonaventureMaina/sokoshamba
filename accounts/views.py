@@ -102,6 +102,12 @@ def consumer_profile(request):
             request.user.email = email
             request.user.save()
 
+        # Handle photo removal
+        if request.POST.get('remove_photo') == 'on':
+            profile.profile_photo_url.delete(save=False)
+            profile.profile_photo_url = None
+            profile.save()
+
         # Handle profile photo upload
         if 'photo' in request.FILES:
             profile.profile_photo_url = request.FILES['photo']
@@ -137,6 +143,12 @@ def farmer_profile(request):
             farmer.farm_name = farm_name
         farmer.bio = bio
         farmer.save()
+
+        # Handle photo removal
+        if request.POST.get('remove_photo') == 'on':
+            farmer.photo_url.delete(save=False)
+            farmer.photo_url = None
+            farmer.save()
 
         # Handle photo upload
         if 'photo' in request.FILES:
