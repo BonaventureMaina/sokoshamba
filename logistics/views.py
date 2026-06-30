@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.utils import timezone
+from decimal import Decimal
 from orders.models import Payout
 from .models import CourierAssignment
 
@@ -31,7 +32,7 @@ def courier_status(request, token):
             order.save()
             # Create automatic payout (Decision 7)
             commission_rate = 0.15  # 15% take rate
-            payout_amount = order.subtotal * (1 - commission_rate)
+            payout_amount = order.subtotal * (Decimal("1") - Decimal(str(commission_rate)))
             Payout.objects.get_or_create(
                 order=order,
                 defaults={

@@ -102,3 +102,45 @@ def verify_callback_signature(request):
         # Log the suspicious IP
         print(f"[SECURITY] Callback from untrusted IP: {client_ip}")
         return False
+
+def b2c_payout(phone, amount, order_id):
+    """
+    Send money to a farmer via B2C.
+    In sandbox mode, simulates success (no real money moved).
+    In production, calls the Daraja B2C API.
+    """
+    env = os.environ.get('MPESA_ENVIRONMENT', 'sandbox')
+    if env == 'sandbox':
+        # Sandbox: simulate successful payout
+        return {'success': True, 'ConversationID': f'sandbox_{order_id}', 'TransactionID': f'sandbox_{order_id}'}
+    else:
+        # Production: real B2C call
+        token = get_auth_token()
+        shortcode = os.environ.get('MPESA_SHORTCODE')
+        base_url = 'https://api.safaricom.co.ke'
+        security_credential = os.environ.get('MPESA_B2C_SECURITY_CREDENTIAL')
+
+        if not security_credential:
+            raise Exception("B2C security credential not configured in production")
+
+        payload = {
+            'InitiatorName': shortcode,
+            'SecurityCredential': security_credential,
+            'CommandID': 'BusinessPayment',
+            'Amount': int(amount),
+            'PartyA': shortcode,
+            'PartyB': phone.replace('+', ''),
+            'Remarks': f'Payout for Order #{order_id}',
+            'QueueTimeOutURL': os.environ.get('B2C_TIMEOUT_URL', ''),
+            'ResultURL': os.environ.get('B2C_RESULT_URL', ''),
+            'Occasion': 'SokoShamba payout',
+        }
+
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json',
+        }
+
+        response = requests.post(f'{base_url}/mpesa/b2c/v1/paymentrequest', json=payload, headers=headers)
+        response.raise_for_status()
+        return response.json()
