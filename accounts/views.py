@@ -1,5 +1,6 @@
+import random
+import os
 from django.shortcuts import render, redirect
-from django_ratelimit.decorators import ratelimit
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
@@ -7,7 +8,6 @@ from .models import User, OtpCode, ConsumerProfile
 from marketplace.templatetags.phone_format import normalize_phone
 
 
-@ratelimit(key='ip', rate='5/m', block=True)
 def login_request(request):
     if request.user.is_authenticated:
         return redirect('home')
@@ -22,15 +22,22 @@ def login_request(request):
         except User.DoesNotExist:
             return render(request, 'login.html', {'error': 'No account found with that phone number.', 'phone': phone})
 
-        import random
         code = str(random.randint(100000, 999999))
         OtpCode.objects.filter(user=user).delete()
 
         expires_at = timezone.now() + timezone.timedelta(minutes=5)
         OtpCode.objects.create(user=user, code=code, expires_at=expires_at)
 
-        # Print OTP to console
-        print(f"\n>>> OTP for {phone}: {code}\n")
+        if os.environ.get('MPESA_ENVIRONMENT', 'sandbox') == 'sandbox':
+            # Sandbox: print OTP to console (no real SMS delivery)
+            print(f"\n>>> OTP for {phone}: {code}\n")
+        else:
+            # Production: send real SMS via Africa's Talking
+            try:
+                from notifications.sms_service import send_sms
+                send_sms(phone, f'Your SokoShamba OTP code is: {code}')
+            except Exception as e:
+                print(f'SMS failed for {phone}: {e}. OTP code is: {code}')
 
         request.session['login_phone'] = phone
         return redirect('otp_verify')
@@ -84,6 +91,19 @@ def logout_view(request):
     logout(request)
     return redirect('home')
 
+
+def get_verified_farmer(user):
+    """Return farmer profile if user is a verified farmer, else None."""
+    if user.is_authenticated and user.role == 'farmer':
+        try:
+            profile = user.farmer_profile
+            if profile.verification_status == 'verified' and profile.is_active:
+                return profile
+        except Exception:
+            pass
+    return None
+
+
 @login_required
 def consumer_profile(request):
     if request.user.role != 'consumer':
@@ -116,17 +136,6 @@ def consumer_profile(request):
         return redirect('consumer_profile')
 
     return render(request, 'consumer_profile.html', {'profile': profile})
-
-def get_verified_farmer(user):
-    """Return farmer profile if user is a verified farmer, else None."""
-    if user.is_authenticated and user.role == 'farmer':
-        try:
-            profile = user.farmer_profile
-            if profile.verification_status == 'verified' and profile.is_active:
-                return profile
-        except Exception:
-            pass
-    return None
 
 
 @login_required
