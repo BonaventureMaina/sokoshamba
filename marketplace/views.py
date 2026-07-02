@@ -104,6 +104,27 @@ def add_to_cart(request):
     except (ValueError, TypeError):
         return JsonResponse({'success': False, 'message': 'Invalid quantity.'}, status=400)
 
+    # If item_id is provided, update quantity on existing cart item directly
+    item_id = request.POST.get('item_id')
+    if item_id:
+        cart = get_or_create_cart(request)
+        cart_item = get_object_or_404(CartItem, id=item_id, cart=cart)
+        # Enforce single-farmer check
+        existing_items = cart.items.exclude(id=item_id).select_related('product__farmer').first()
+        if existing_items and existing_items.product.farmer_id != cart_item.product.farmer_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Cannot mix products from different farmers.',
+            }, status=409)
+        cart_item.quantity = quantity
+        cart_item.save()
+        cart.save()
+        return JsonResponse({
+            'success': True,
+            'message': f'Updated quantity to {quantity}.',
+            'cart_count': cart.items.count(),
+        })
+
     product = get_object_or_404(
         Product,
         id=product_id,

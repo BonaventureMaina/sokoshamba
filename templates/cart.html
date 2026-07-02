@@ -25,9 +25,9 @@
         <!-- Quantity & Remove -->
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
             <div style="display: flex; align-items: center; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); overflow: hidden;">
-                <button onclick="updateQty({{ item.id }}, -1, {{ item.product.price }})" class="btn" style="padding: 0.3rem 0.6rem; background: var(--gray-100); font-size: 0.85rem; border-radius: 0;">−</button>
+                <button id="minus-{{ item.id }}" onclick="updateQty({{ item.id }}, -1, {{ item.product.price }})" class="btn" style="padding: 0.3rem 0.6rem; background: var(--gray-100); font-size: 0.85rem; border-radius: 0;">−</button>
                 <span id="qty-{{ item.id }}" style="width: 36px; text-align: center; font-weight: 700; font-size: 0.85rem;">{{ item.quantity|floatformat:"-2" }}</span>
-                <button onclick="updateQty({{ item.id }}, 1, {{ item.product.price }})" class="btn" style="padding: 0.3rem 0.6rem; background: var(--gray-100); font-size: 0.85rem; border-radius: 0;">+</button>
+                <button id="plus-{{ item.id }}" onclick="updateQty({{ item.id }}, 1, {{ item.product.price }})" class="btn" style="padding: 0.3rem 0.6rem; background: var(--gray-100); font-size: 0.85rem; border-radius: 0;">+</button>
             </div>
             <span id="subtotal-{{ item.id }}" style="font-weight: 700; font-size: 0.85rem; color: var(--charcoal);">KSh {{ item.line_total|floatformat:2 }}</span>
             <a href="#" onclick="removeItem({{ item.id }})" style="font-size: 0.75rem; color: #dc3545; text-decoration: none; font-weight: 600;">Remove</a>
@@ -52,7 +52,7 @@
     </div>
 </div>
 
-<a href="/checkout/" class="btn btn-cta" style="display: block; width: 100%; text-align: center;">Proceed to Checkout</a>
+<a href="/checkout/" id="checkout-link" class="btn btn-cta" style="display: block; width: 100%; text-align: center;">Proceed to Checkout</a>
 
 {% else %}
 <div class="empty-state">
@@ -64,18 +64,63 @@
 {% endif %}
 
 <script>
+    let pendingUpdates = 0;  // Track ongoing server updates
+
+    function disableButtons(itemId, disabled) {
+        document.getElementById('minus-' + itemId).disabled = disabled;
+        document.getElementById('plus-' + itemId).disabled = disabled;
+    }
+
+    function updateCheckoutButton() {
+        const btn = document.getElementById('checkout-link');
+        if (btn) {
+            if (pendingUpdates > 0) {
+                btn.style.opacity = '0.6';
+                btn.style.pointerEvents = 'none';
+                btn.textContent = 'Saving…';
+            } else {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+                btn.textContent = 'Proceed to Checkout';
+            }
+        }
+    }
+
     function updateQty(itemId, delta, price) {
         const qtySpan = document.getElementById('qty-' + itemId);
         const subtotalSpan = document.getElementById('subtotal-' + itemId);
         let qty = parseFloat(qtySpan.textContent) + delta;
         if (qty < 1) { removeItem(itemId); return; }
+
+        // Disable buttons and show pending
+        disableButtons(itemId, true);
+        pendingUpdates++;
+        updateCheckoutButton();
+
+        // Optimistic UI update
         qtySpan.textContent = qty % 1 === 0 ? qty : qty.toFixed(2);
         subtotalSpan.textContent = 'KSh ' + (qty * price).toFixed(2);
         recalcCart();
+
         fetch('/cart/add/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': '{{ csrf_token }}' },
-            body: 'product_id=' + (itemId) + '&quantity=' + qty,
+            body: 'item_id=' + itemId + '&quantity=' + qty,
+        })
+        .then(() => {
+            // Server confirmed
+            pendingUpdates--;
+            disableButtons(itemId, false);
+            updateCheckoutButton();
+        })
+        .catch(() => {
+            // Revert on failure
+            pendingUpdates--;
+            disableButtons(itemId, false);
+            updateCheckoutButton();
+            qtySpan.textContent = (qty - delta) % 1 === 0 ? (qty - delta) : (qty - delta).toFixed(2);
+            subtotalSpan.textContent = 'KSh ' + ((qty - delta) * price).toFixed(2);
+            recalcCart();
         });
     }
 
@@ -96,7 +141,7 @@
             total += parseFloat(el.textContent.replace('KSh ', '')) || 0;
         });
         document.getElementById('cartSubtotal').textContent = 'KSh ' + total.toFixed(2);
-        document.getElementById('cartTotal').textContent = 'KSh ' + total.toFixed(2);
+        document.getElementById('cartTotal').textContent = 'KSh ' + (total + 150).toFixed(2);
     }
 </script>
 {% endblock %}

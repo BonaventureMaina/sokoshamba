@@ -27,6 +27,11 @@
             </p>
             <p style="font-size: 0.9rem; color: var(--slate-gray); margin-bottom: 0.5rem;">
                 {{ order.created_at|date:"M d, Y" }} · {{ order.items.count }} item(s)
+            {% if order.status == 'pending' and order.auto_cancel_at %}
+            <span style="display:block;font-size:0.75rem;font-weight:700;color:var(--green-800);margin-top:0.2rem;">
+                ⏳ <span class="countdown" data-auto-cancel="{{ order.auto_cancel_at|date:'c' }}"></span>
+            </span>
+            {% endif %}
             </p>
             <p style="font-weight: 700; color: var(--forest-green); font-size: 1.1rem;">
                 KSh {{ order.total }}
@@ -42,4 +47,56 @@
     <p style="color: var(--slate-gray);">When consumers place orders, they'll appear here.</p>
 </div>
 {% endif %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var countdowns = document.querySelectorAll('.countdown');
+        if (countdowns.length === 0) return;
+
+        function updateAll() {
+            var now = new Date();
+            countdowns.forEach(function(el) {
+                var deadline = new Date(el.getAttribute('data-auto-cancel'));
+                if (isNaN(deadline.getTime())) {
+                    el.textContent = 'invalid time';
+                    return;
+                }
+                var remaining = Math.max(0, deadline - now);
+                var minutes = Math.floor(remaining / 60000);
+                var seconds = Math.floor((remaining % 60000) / 1000);
+                if (remaining <= 0) {
+                    el.textContent = 'auto‑cancelling…';
+                } else {
+                    el.textContent = minutes + 'm ' + seconds + 's remaining';
+                }
+            });
+        }
+        updateAll();
+        setInterval(updateAll, 1000);
+    });
+</script>
 {% endblock %}
+
+<script>
+    (function() {
+        console.log("Countdown elements found:", countdowns.length);
+        var countdowns = document.querySelectorAll('.countdown');
+        if (countdowns.length === 0) return;
+
+        function updateAll() {
+            var now = new Date();
+            countdowns.forEach(function(el) {
+                var deadline = new Date(el.getAttribute('data-auto-cancel'));
+                var remaining = Math.max(0, deadline - now);
+                var minutes = Math.floor(remaining / 60000);
+                var seconds = Math.floor((remaining % 60000) / 1000);
+                if (remaining <= 0) {
+                    el.textContent = 'auto‑cancelling…';
+                } else {
+                    el.textContent = minutes + 'm ' + seconds + 's remaining';
+                }
+            });
+        }
+        updateAll();
+        setInterval(updateAll, 1000);
+    })();
+</script>

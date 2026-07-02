@@ -41,6 +41,10 @@ class FarmerProfileAdmin(admin.ModelAdmin):
     list_filter = ('verification_status', 'is_active', 'county')
     search_fields = ('farm_name', 'user__phone')
     readonly_fields = ('verified_at',)
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'verified_by':
+            kwargs['queryset'] = User.objects.filter(is_staff=True)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def user_phone(self, obj):
         return obj.user.phone
@@ -55,9 +59,10 @@ class FarmerProfileAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         """Auto‑set verified_by when verification status changes to verified."""
-        if 'verification_status' in form.changed_data and obj.verification_status == 'verified':
-            obj.verified_by = request.user
-            obj.verified_at = timezone.now()
+        if obj.verification_status == 'verified':
+            if 'verification_status' in form.changed_data or not obj.verified_by:
+                obj.verified_by = request.user
+                obj.verified_at = timezone.now()
         # Only superuser can change is_active
         if 'is_active' in form.changed_data and not request.user.is_superuser:
             self.message_user(request, 'Only the Owner can activate or suspend farmers.', messages.ERROR)

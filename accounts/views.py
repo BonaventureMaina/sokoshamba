@@ -12,15 +12,27 @@ def login_request(request):
     if request.user.is_authenticated:
         return redirect('home')
 
+    # Determine context for the login page subtitle
+    next_url = request.GET.get('next', '')
+    after_checkout = next_url.startswith('/orders/')
+
     if request.method == 'POST':
         phone = normalize_phone(request.POST.get('phone', '').strip())
         if not phone:
-            return render(request, 'login.html', {'error': 'Enter your phone number.', 'phone': phone})
+            return render(request, 'login.html', {
+                'error': 'Enter your phone number.',
+                'phone': phone,
+                'after_checkout': after_checkout,
+            })
 
         try:
             user = User.objects.get(phone=phone)
         except User.DoesNotExist:
-            return render(request, 'login.html', {'error': 'No account found with that phone number.', 'phone': phone})
+            return render(request, 'login.html', {
+                'error': 'No account found with that phone number.',
+                'phone': phone,
+                'after_checkout': after_checkout,
+            })
 
         code = str(random.randint(100000, 999999))
         OtpCode.objects.filter(user=user).delete()
@@ -29,20 +41,22 @@ def login_request(request):
         OtpCode.objects.create(user=user, code=code, expires_at=expires_at)
 
         if os.environ.get('MPESA_ENVIRONMENT', 'sandbox') == 'sandbox':
-            # Sandbox: print OTP to console (no real SMS delivery)
             print(f"\n>>> OTP for {phone}: {code}\n")
         else:
-            # Production: send real SMS via Africa's Talking
             try:
                 from notifications.sms_service import send_sms
                 send_sms(phone, f'Your SokoShamba OTP code is: {code}')
             except Exception as e:
                 print(f'SMS failed for {phone}: {e}. OTP code is: {code}')
 
+        # Save the next URL so the user is redirected back after OTP
+        if next_url:
+            request.session['login_next'] = next_url
         request.session['login_phone'] = phone
         return redirect('otp_verify')
 
-    return render(request, 'login.html')
+    # GET request
+    return render(request, 'login.html', {'after_checkout': after_checkout})
 
 
 def otp_verify(request):
@@ -58,7 +72,7 @@ def otp_verify(request):
         try:
             user = User.objects.get(phone=phone)
         except User.DoesNotExist:
-            del request.session['login_phone']
+            request.session.pop('login_phone', None)
             return redirect('login_request')
 
         otp = OtpCode.objects.filter(user=user, code=code).first()
@@ -74,12 +88,16 @@ def otp_verify(request):
             user.phone_verified = True
             user.save(update_fields=['phone_verified'])
 
-        # Extend session if "Remember me" checked
         if request.POST.get('remember_me'):
-            request.session.set_expiry(60 * 60 * 24 * 30)  # 30 days
-        login(request, user)
-        del request.session['login_phone']
+            request.session.set_expiry(60 * 60 * 24 * 30)
 
+        login(request, user)
+        request.session.pop('login_phone', None)
+
+        # Redirect to saved next URL, or to the appropriate dashboard
+        next_url = request.session.pop('login_next', None)
+        if next_url:
+            return redirect(next_url)
         if user.role == 'farmer':
             return redirect('farmer_order_list')
         return redirect('home')
@@ -93,7 +111,6 @@ def logout_view(request):
 
 
 def get_verified_farmer(user):
-    """Return farmer profile if user is a verified farmer, else None."""
     if user.is_authenticated and user.role == 'farmer':
         try:
             profile = user.farmer_profile
@@ -122,13 +139,11 @@ def consumer_profile(request):
             request.user.email = email
             request.user.save()
 
-        # Handle photo removal
         if request.POST.get('remove_photo') == 'on':
             profile.profile_photo_url.delete(save=False)
             profile.profile_photo_url = None
             profile.save()
 
-        # Handle profile photo upload
         if 'photo' in request.FILES:
             profile.profile_photo_url = request.FILES['photo']
             profile.save()
@@ -153,13 +168,11 @@ def farmer_profile(request):
         farmer.bio = bio
         farmer.save()
 
-        # Handle photo removal
         if request.POST.get('remove_photo') == 'on':
             farmer.photo_url.delete(save=False)
             farmer.photo_url = None
             farmer.save()
 
-        # Handle photo upload
         if 'photo' in request.FILES:
             farmer.photo_url = request.FILES['photo']
             farmer.save()

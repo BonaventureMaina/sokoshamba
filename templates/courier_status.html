@@ -23,6 +23,18 @@
         }
         h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
         p { margin-bottom: 1rem; color: #6c757d; }
+        .address-box {
+            text-align: left;
+            background: #f0f7f4;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        .address-box strong {
+            color: #2d6a4f;
+        }
         button {
             width: 100%;
             padding: 1rem;
@@ -44,6 +56,23 @@
         <p><strong>Order #{{ order.id }}</strong></p>
         <p>Rider: {{ rider.name }} · {{ rider.phone }}</p>
         <p>Current: <strong>{{ assignment.get_status_display }}</strong></p>
+
+        <!-- Pickup Address (Farm) -->
+        <div class="address-box">
+            <strong>📍 Pickup (Farm)</strong><br>
+            {{ order.farmer.farm_name }}<br>
+            {{ order.farmer.county }}{% if order.farmer.sub_county %}, {{ order.farmer.sub_county }}{% endif %}<br>
+            Farmer phone: {{ order.farmer.user.phone }}
+        </div>
+
+        <!-- Delivery Address (Consumer) -->
+        <div class="address-box">
+            <strong>🏠 Delivery</strong><br>
+            {{ order.delivery_address_snapshot.area }}, {{ order.delivery_address_snapshot.county }}<br>
+            {% if order.delivery_address_snapshot.landmark %}Landmark: {{ order.delivery_address_snapshot.landmark }}<br>{% endif %}
+            {% if order.delivery_address_snapshot.instructions %}Instructions: {{ order.delivery_address_snapshot.instructions }}<br>{% endif %}
+            Consumer phone: {{ order.consumer_phone_at_order }}
+        </div>
 
         {% if assignment.status == 'assigned' %}
         <form method="POST">

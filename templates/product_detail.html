@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
+{% load phone_format %}
 
 {% block content %}
-<a href="/products/" style="display: inline-block; margin-bottom: 1rem; color: var(--green-600); text-decoration: none; font-size: 0.9rem; font-weight: 600;">← Back to Products</a>
+{% if user.is_authenticated and user.role == 'farmer' and user.farmer_profile == product.farmer %}<a href="/farmer/products/" style="display: inline-block; margin-bottom: 1rem; color: var(--green-600); text-decoration: none; font-size: 0.9rem; font-weight: 600;">← Back to My Products</a>{% else %}<a href="/products/" style="display: inline-block; margin-bottom: 1rem; color: var(--green-600); text-decoration: none; font-size: 0.9rem; font-weight: 600;">← Back to Products</a>{% endif %}
 
 <!-- Product Image -->
 <div style="width: 100%; max-height: 320px; aspect-ratio: 4 / 3; background: linear-gradient(135deg, var(--green-100), #e8f5e9); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 3rem; margin-bottom: 1.2rem; overflow: hidden; box-shadow: var(--shadow-sm);">
     {% if product.images.first %}
-    <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: contain;">
+    <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
     {% else %}
     🥬
     {% endif %}
@@ -21,7 +22,7 @@
 </div>
 
 <!-- Farmer Snippet -->
-<a href="/farmer/{{ product.farmer.id }}/" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; text-decoration: none; color: inherit;">
+{% if user.is_authenticated and user.role == 'farmer' and user.farmer_profile == product.farmer %}<div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">{% else %}<a href="/farmer/{{ product.farmer.id }}/" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; text-decoration: none; color: inherit;">{% endif %}
     {% if product.farmer.photo_url %}<img src="{{ product.farmer.photo_url.url }}" alt="{{ product.farmer.farm_name }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">{% else %}<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--green-200), var(--green-400)); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; color: white;">🧑‍🌾</div>{% endif %}
     <div>
         <div style="display: flex; align-items: center; gap: 0.25rem;">
@@ -30,15 +31,24 @@
         </div>
         <span style="font-size: 0.8rem; color: var(--gray-600);">{{ product.farmer.county }}</span>
     </div>
-</a>
+{% if user.is_authenticated and user.role == 'farmer' and user.farmer_profile == product.farmer %}</div>{% else %}</a>{% endif %}
 
 <!-- Price -->
-<div style="margin-bottom: 1.5rem;">
-    <span style="font-size: 2rem; font-weight: 800; color: var(--green-800);">KSh {{ product.price }}</span>
-    <span style="font-size: 1rem; color: var(--gray-600);"> / {{ product.unit }}</span>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+        <span style="font-size: 2rem; font-weight: 800; color: var(--green-800);">KSh {{ product.price }}</span>
+        <span style="font-size: 1rem; color: var(--gray-600);"> / {{ product.unit }}</span>
+        <span style="font-size: 0.9rem; color: var(--gray-600); margin-left: 1rem;">Stock: {{ product.available_quantity|floatformat:"-2" }} {{ product.unit }}</span>
+    </div>
+    {% if user.is_authenticated and user.role == 'farmer' and user.farmer_profile == product.farmer %}
+    <a href="/farmer/products/edit/{{ product.id }}/" class="btn btn-primary" style="flex-shrink: 0; padding: 0.4rem 0.8rem; font-size: 0.85rem;">Edit Product</a>
+    {% endif %}
 </div>
 
-<!-- Quantity Selector -->
+{% if user.is_authenticated and user.role == 'farmer' and user.farmer_profile == product.farmer %}
+<!-- Quantity and Add-to-Cart hidden for farmer -->
+{% else %}
+{% if user.is_authenticated and user.role == 'farmer' and user.farmer_profile == product.farmer %}<!-- Quantity and Add-to-Cart hidden for farmer viewing own product -->{% else %}<!-- Quantity Selector -->
 <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
     <label for="quantity" style="font-weight: 700; font-size: 0.95rem;">Quantity:</label>
     <div style="display: flex; align-items: center; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); overflow: hidden;">
@@ -55,6 +65,8 @@
     </button>
 </div>
 
+{% endif %}
+{% endif %}
 <!-- Toast -->
 <div id="toast" style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--charcoal); color: white; padding: 0.75rem 1.5rem; border-radius: 2rem; font-size: 0.9rem; font-weight: 600; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; box-shadow: var(--shadow-lg);">
     <span id="toast-msg"></span>
@@ -62,12 +74,15 @@
 
 <!-- Description -->
 {% if product.description %}
-<div style="margin-bottom: 1.5rem; padding: 1rem 1.2rem; background: var(--green-100); border-radius: var(--radius-md);">
+<div style="margin-bottom: 1.5rem;">
     <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--green-900);">Description</h3>
     <p style="font-size: 0.95rem; color: var(--charcoal); line-height: 1.5;">{{ product.description }}</p>
 </div>
 {% endif %}
 
+{% if user.is_authenticated and user.role == 'farmer' and user.farmer_profile == product.farmer %}
+<!-- About the Farm hidden for farmer -->
+{% else %}
 <!-- Farmer Details Accordion -->
 <div style="border: 1px solid var(--gray-200); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 1.5rem;">
     <button onclick="toggleAccordion(this)" style="width: 100%; padding: 1rem 1.2rem; background: white; border: none; text-align: left; font-size: 1rem; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: var(--charcoal);">
@@ -84,6 +99,7 @@
         <a href="/farmer/{{ product.farmer.id }}/" style="display: inline-block; margin-top: 0.5rem; color: var(--green-600); font-weight: 700; font-size: 0.9rem; text-decoration: none;">View all products from this farmer →</a>
     </div>
 </div>
+{% endif %}
 
 <!-- Reviews -->
 <div style="margin-bottom: 2rem;">
@@ -92,7 +108,7 @@
         {% for review in reviews %}
         <div class="card" style="padding: 1rem; margin-bottom: 0.75rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-weight: 700; font-size: 0.9rem;">{{ review.consumer.phone }}</span>
+                <span style="font-weight: 700; font-size: 0.9rem;">{{ review.consumer.phone|mask_phone }}</span>
                 <span class="star-rating" style="font-size: 0.85rem;">
                     {% for i in "12345" %}
                         {% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}
@@ -103,7 +119,7 @@
             <p style="font-size: 0.9rem; color: var(--charcoal);">{{ review.text }}</p>
             {% endif %}
             {% if user.is_authenticated and user.role == 'farmer' and user.farmer_profile == review.farmer %}
-            <a href="/review/{{ review.id }}/respond/" style="font-size: 0.75rem; color: var(--green-600); text-decoration: none; font-weight: 600;">{% if review.response_text %}Edit Response{% else %}Respond{% endif %}</a>
+            <a href="/review/{{ review.id }}/respond/" class="btn btn-primary" style="font-size: 0.8rem; padding: 0.3rem 0.8rem; display: inline-block; margin-top: 0.25rem;">{% if review.response_text %}Edit Response{% else %}Respond{% endif %}</a>
             {% endif %}
             {% if review.response_text %}
             <div style="background: var(--green-100); padding: 0.75rem; border-radius: var(--radius-sm); margin-top: 0.5rem;">

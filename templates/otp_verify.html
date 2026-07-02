@@ -3,7 +3,11 @@
 {% block content %}
 <div style="max-width: 400px; margin: 0 auto;">
     <h1 class="page-title">Verify OTP</h1>
-    <p class="page-subtitle">Enter the 6‑digit code sent to <strong>{{ phone }}</strong></p>
+    <p class="page-subtitle">{% if new_account %}
+    Verify your phone number to track your order. Code sent to <strong>{{ phone }}</strong>
+{% else %}
+    Enter the 6‑digit code sent to <strong>{{ phone }}</strong>
+{% endif %}</p>
 
     <div class="card" style="padding: 1.5rem;">
         {% if error %}

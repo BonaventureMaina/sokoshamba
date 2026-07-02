@@ -149,6 +149,9 @@ def mpesa_callback(request):
         user.set_unusable_password()
         user.save()
 
+    # Log the consumer in automatically after payment
+    login(request, user)
+
     # Merge guest cart into user cart (if guest cart still exists and is different)
     try:
         guest_cart = Cart.objects.get(id=cart.id)
@@ -227,16 +230,15 @@ def mpesa_callback(request):
     })
 
 
+@login_required
 def order_list(request):
-    if not request.user.is_authenticated:
-        return redirect('login')
     orders = request.user.orders.select_related('farmer').order_by('-created_at')
     return render(request, 'order_list.html', {'orders': orders})
 
 
 def order_detail(request, order_id):
     if not request.user.is_authenticated:
-        return redirect('login')
+        return redirect('login_request')
     order = get_object_or_404(request.user.orders, id=order_id)
     items = order.items.all()
     return render(request, 'order_detail.html', {'order': order, 'items': items})
@@ -280,6 +282,14 @@ def farmer_order_detail(request, order_id):
             order.status = 'pickup_requested'
             order.pickup_requested_at = timezone.now()
             order.save()
+            # Notify admin via SMS
+            try:
+                admin_phone = os.environ.get('ADMIN_PHONE')
+                if admin_phone:
+                    from notifications.sms_service import send_sms
+                    send_sms(admin_phone, f'Pickup requested for Order #{order.id} from {farmer.farm_name}.')
+            except Exception:
+                pass  # SMS failure shouldn't block the pickup request
         return redirect('farmer_order_detail', order_id=order.id)
 
     return render(request, 'farmer_order_detail.html', {
@@ -353,12 +363,17 @@ def check_order(request):
     if not checkout_request_id:
         return JsonResponse({'success': False, 'message': 'Missing checkout_request_id.'}, status=400)
 
-    # Check if any payment exists with this checkout_request_id and is completed
-    payment = MpesaPayment.objects.filter(checkout_request_id=checkout_request_id, status='completed').first()
+    # Check if any payment exists with this checkout_request_id
+    payment = MpesaPayment.objects.filter(checkout_request_id=checkout_request_id).first()
     if payment:
-        return JsonResponse({'success': True, 'order_id': payment.order.id})
-    else:
-        return JsonResponse({'success': False, 'message': 'Payment not yet confirmed.'})
+        if payment.status == 'completed':
+            return JsonResponse({'success': True, 'order_id': payment.order.id})
+        else:
+            return JsonResponse({'success': False, 'message': 'Payment failed. Please try again.', 'failed': True})
+    # Also check if the pending checkout was deleted (means failure callback already processed)
+    if not PendingCheckout.objects.filter(checkout_request_id=checkout_request_id).exists():
+        return JsonResponse({'success': False, 'message': 'Payment failed. Please try again.', 'failed': True})
+    return JsonResponse({'success': False, 'message': 'Payment not yet confirmed.'})
 
 @csrf_exempt
 @require_POST

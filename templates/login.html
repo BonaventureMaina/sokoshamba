@@ -2,8 +2,12 @@
 
 {% block content %}
 <div style="max-width: 400px; margin: 0 auto;">
-    <h1 class="page-title">Welcome back</h1>
-    <p class="page-subtitle">Log in to your SokoShamba account</p>
+    <h1 class="page-title">Log in to SokoShamba</h1>
+    {% if after_checkout %}
+    <p class="page-subtitle">Enter the phone number you used for payment. We'll send you a code to track your order.</p>
+    {% else %}
+    <p class="page-subtitle">Enter your registered phone number. We'll send you a verification code.</p>
+    {% endif %}
 
     <div class="card" style="padding: 1.5rem;">
         {% if error %}

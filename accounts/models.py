@@ -35,6 +35,7 @@ class User(AbstractUser):
     email = EncryptedCharField(max_length=254, blank=True, null=True)
     phone_verified = models.BooleanField(default=False)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    first_login = models.BooleanField(default=True)
 
     objects = UserManager()
 

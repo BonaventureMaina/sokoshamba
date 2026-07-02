@@ -49,6 +49,25 @@
     </div>
 </div>
 
+<!-- Trust Strip -->
+<div style="display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; text-align: center;">
+    <div style="flex: 1; min-width: 80px; background: var(--green-100); padding: 0.5rem; border-radius: var(--radius-sm);">
+        <div style="font-size: 1.2rem;">🛡️</div>
+        <p style="font-size: 0.65rem; font-weight: 600; color: var(--green-900);">We hold your payment until delivery</p>
+    </div>
+    <div style="flex: 1; min-width: 80px; background: var(--green-100); padding: 0.5rem; border-radius: var(--radius-sm);">
+        <div style="font-size: 1.2rem;">✅</div>
+        <p style="font-size: 0.65rem; font-weight: 600; color: var(--green-900);">{% if items.0.product.farmer.farm_name %}{{ items.0.product.farmer.farm_name }}{% else %}Farmer{% endif %} is verified</p>
+    </div>
+    <div style="flex: 1; min-width: 80px; background: var(--green-100); padding: 0.5rem; border-radius: var(--radius-sm);">
+        <div style="font-size: 1.2rem;">⏱️</div>
+        <p style="font-size: 0.65rem; font-weight: 600; color: var(--green-900);">Auto‑refund if not confirmed in 30 min</p>
+    </div>
+    <div style="flex: 1; min-width: 80px; background: var(--green-100); padding: 0.5rem; border-radius: var(--radius-sm);">
+        <div style="font-size: 1.2rem;">🔒</div>
+        <p style="font-size: 0.65rem; font-weight: 600; color: var(--green-900);">Secure M‑Pesa · We never see your PIN</p>
+    </div>
+</div>
 <div id="payment-section" class="card" style="padding: 1rem;">
     <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--green-900);">Pay with M‑Pesa</h2>
     <div class="input-group">
@@ -71,6 +90,20 @@
 </div>
 
 <script>
+    // Auto-save address fields to localStorage
+    const addressFields = ['county', 'area', 'landmark', 'instructions', 'phone'];
+    addressFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            // Restore saved value
+            const saved = localStorage.getItem('checkout_' + id);
+            if (saved) el.value = saved;
+            // Save on input
+            el.addEventListener('input', () => {
+                localStorage.setItem('checkout_' + id, el.value);
+            });
+        }
+    });
     function pay() {
         const phone = document.getElementById('phone').value.trim();
         const county = document.getElementById('county').value.trim();
@@ -128,6 +161,9 @@
                     clearInterval(interval);
                     document.getElementById('payment-section').style.display = 'none';
                     document.getElementById('success-section').style.display = 'block';
+                } else if (result.failed) {
+                    clearInterval(interval);
+                    document.getElementById('pay-message').textContent = result.message || 'Payment failed. Please try again.';
                 }
             });
             attempts++;
