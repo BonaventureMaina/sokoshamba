@@ -43,6 +43,12 @@ class Command(BaseCommand):
                     order.status = 'auto_cancelled'
                     order.save(update_fields=['status'])
 
+                    # Release stock back to farmer
+                    for item in order.items.all():
+                        product = item.product
+                        product.available_quantity = product.available_quantity + item.quantity
+                        product.save(update_fields=['available_quantity'])
+
                     # Find the successful payment to refund
                     payment = order.mpesa_payments.filter(status='completed').first()
                     if payment:

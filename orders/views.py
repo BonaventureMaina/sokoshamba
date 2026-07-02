@@ -209,6 +209,10 @@ def mpesa_callback(request):
             price=item.product.price,
             quantity=item.quantity,
         )
+        # Deduct stock
+        product = item.product
+        product.available_quantity = product.available_quantity - item.quantity
+        product.save(update_fields=['available_quantity'])
 
     MpesaPayment.objects.create(
         order=order,
@@ -390,6 +394,11 @@ def cancel_order(request, order_id):
         order.consumer_cancelled_at = timezone.now()
         order.consumer_cancel_reason = reason
         order.save()
+        # Release stock back to farmer
+        for item in order.items.all():
+            product = item.product
+            product.available_quantity = product.available_quantity + item.quantity
+            product.save(update_fields=['available_quantity'])
         # TODO: trigger refund in production
         return redirect('order_detail', order_id=order.id)
     return redirect('order_detail', order_id=order.id)
