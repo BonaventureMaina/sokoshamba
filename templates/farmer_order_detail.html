@@ -4,7 +4,7 @@
 {% block content %}
 <a href="/farmer/orders/" style="display: inline-block; margin-bottom: 1rem; color: var(--green-600); text-decoration: none; font-size: 0.9rem; font-weight: 600;">← Back to Orders</a>
 
-<h1 style="font-size: 1.6rem; font-weight: 800; color: var(--green-900); margin-bottom: 0.5rem;">Order #{{ order.id }}</h1>
+<h1 style="font-size: 1.6rem; font-weight: 800; color: var(--green-900); margin-bottom: 0.5rem;">SK-{{ order.id }}</h1>
 <p style="color: var(--gray-600); margin-bottom: 1.5rem;">
     {{ order.created_at|date:"M d, Y" }} at {{ order.created_at|date:"g:i A" }}
     · Status: <strong style="color: var(--green-800);">{{ order.get_status_display }}</strong>

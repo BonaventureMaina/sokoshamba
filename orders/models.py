@@ -33,6 +33,7 @@ class Order(models.Model):
         blank=True,
         null=True,
     )
+    reference_number = models.CharField(max_length=20, unique=True, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     decline_reason = models.TextField(blank=True, null=True)
     consumer_cancel_reason = models.TextField(blank=True, null=True)
@@ -100,6 +101,7 @@ class MpesaPayment(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     mpesa_receipt_number = models.CharField(max_length=50, blank=True, null=True)
     phone_number = EncryptedCharField(max_length=15)
+    reference_number = models.CharField(max_length=20, unique=True, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     result_description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -134,6 +136,7 @@ class Payout(models.Model):
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     phone_number = EncryptedCharField(max_length=15)
+    reference_number = models.CharField(max_length=20, unique=True, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     failure_reason = models.TextField(blank=True, null=True)
     retry_count = models.IntegerField(default=0)
@@ -163,6 +166,7 @@ class Refund(models.Model):
         related_name='refunds',
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    reference_number = models.CharField(max_length=20, unique=True, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     failure_reason = models.TextField(blank=True, null=True)
     retry_count = models.IntegerField(default=0)

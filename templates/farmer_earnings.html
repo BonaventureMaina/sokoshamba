@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load phone_format %}
 
 {% block content %}
 <h1 class="page-title">Earnings</h1>
@@ -30,7 +31,7 @@
     <div class="card" style="padding: 1rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
             <div>
-                <p style="font-weight: 700; font-size: 0.95rem;">Order #{{ payout.order.id }}</p>
+                <p style="font-weight: 700; font-size: 0.95rem;">SK-{{ payout.order.id }}</p>
                 <p style="font-size: 0.8rem; color: var(--gray-600);">{{ payout.created_at|date:"M d, Y" }}</p>
             </div>
             <div style="text-align: right;">

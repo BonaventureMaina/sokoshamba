@@ -5,6 +5,13 @@
 <p class="page-subtitle">Update your farm details</p>
 
 <div class="card" style="padding: 1.5rem; max-width: 500px; margin: 0 auto;">
+    {% if messages %}
+    {% for message in messages %}
+    <div style="background: #d4edda; color: #155724; padding: 0.75rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.9rem; border-left: 3px solid #28a745;">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
     {% if error %}
     <div class="error-msg">{{ error }}</div>
     {% endif %}

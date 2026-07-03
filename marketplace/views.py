@@ -75,7 +75,10 @@ def product_detail(request, product_id):
     if not product:
         from django.http import Http404
         raise Http404("Product not found")
-    reviews = Review.objects.filter(farmer=product.farmer).select_related('consumer').order_by('-created_at')[:5]
+    reviews = Review.objects.filter(
+        farmer=product.farmer,
+        order__items__product=product
+    ).select_related('consumer').order_by('-created_at').distinct()[:5]
     context = {'product': product, 'reviews': reviews}
     return render(request, 'product_detail.html', context)
 

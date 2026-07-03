@@ -1,6 +1,7 @@
 import random
 import os
 from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
@@ -12,7 +13,6 @@ def login_request(request):
     if request.user.is_authenticated:
         return redirect('home')
 
-    # Determine context for the login page subtitle
     next_url = request.GET.get('next', '')
     after_checkout = next_url.startswith('/orders/')
 
@@ -49,13 +49,11 @@ def login_request(request):
             except Exception as e:
                 print(f'SMS failed for {phone}: {e}. OTP code is: {code}')
 
-        # Save the next URL so the user is redirected back after OTP
         if next_url:
             request.session['login_next'] = next_url
         request.session['login_phone'] = phone
         return redirect('otp_verify')
 
-    # GET request
     return render(request, 'login.html', {'after_checkout': after_checkout})
 
 
@@ -94,7 +92,6 @@ def otp_verify(request):
         login(request, user)
         request.session.pop('login_phone', None)
 
-        # Redirect to saved next URL, or to the appropriate dashboard
         next_url = request.session.pop('login_next', None)
         if next_url:
             return redirect(next_url)
@@ -148,6 +145,7 @@ def consumer_profile(request):
             profile.profile_photo_url = request.FILES['photo']
             profile.save()
 
+        messages.success(request, 'Profile updated successfully.')
         return redirect('consumer_profile')
 
     return render(request, 'consumer_profile.html', {'profile': profile})
@@ -177,6 +175,7 @@ def farmer_profile(request):
             farmer.photo_url = request.FILES['photo']
             farmer.save()
 
+        messages.success(request, 'Profile updated successfully.')
         return redirect('farmer_profile')
 
     return render(request, 'farmer_profile.html', {'farmer': farmer})

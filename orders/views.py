@@ -188,8 +188,26 @@ def mpesa_callback(request):
         'instructions': '',
     }
 
+    # Generate next reference number for this consumer
+    last_order = Order.objects.filter(consumer=user).order_by('-id').first()
+    if last_order and last_order.reference_number:
+        try:
+            # reference stored as SK-C{consumer_id}-{seq}, but displayed as SK-{seq}
+            # We'll parse the sequence from the stored reference
+            ref_parts = last_order.reference_number.split('-')
+            if len(ref_parts) >= 3:
+                last_num = int(ref_parts[2])
+            else:
+                last_num = int(ref_parts[1])
+            next_ref = f'SK-C{user.id}-{last_num + 1:04d}'
+        except (IndexError, ValueError):
+            next_ref = f'SK-C{user.id}-0001'
+    else:
+        next_ref = f'SK-C{user.id}-0001'
+
     order = Order.objects.create(
         consumer=user,
+        reference_number=next_ref,
         farmer=farmer,
         subtotal=subtotal,
         delivery_fee=delivery_fee,

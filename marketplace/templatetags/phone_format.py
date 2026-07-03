@@ -33,3 +33,14 @@ def mask_phone(value):
     if len(value) > 4:
         return '*' * (len(value) - 4) + value[-4:]
     return value
+
+@register.filter(name='display_ref')
+def display_ref(value):
+    """Extract the user-visible part of a reference number.
+    Stored as 'SK-C{consumer_id}-{seq}', display as 'SK-{seq}'."""
+    if not value:
+        return value
+    parts = value.split('-')
+    if len(parts) >= 3:
+        return f'SK-{parts[2]}'
+    return value  # fallback

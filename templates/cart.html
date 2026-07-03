@@ -125,13 +125,19 @@
     }
 
     function removeItem(itemId) {
-        const itemEl = document.getElementById('qty-' + itemId).closest('.card');
-        if (itemEl) itemEl.remove();
-        recalcCart();
         fetch('/cart/remove/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': '{{ csrf_token }}' },
             body: 'item_id=' + itemId,
+        })
+        .then(() => {
+            const itemEl = document.getElementById('qty-' + itemId).closest('.card');
+            if (itemEl) itemEl.remove();
+            recalcCart();
+            const remaining = document.querySelectorAll('[id^="qty-"]');
+            if (remaining.length === 0) {
+                window.location.reload();
+            }
         });
     }
 
