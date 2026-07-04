@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="page-title">Contact Support</h1>
+<p class="page-subtitle">We're here to help. Reach us through any of the channels below.</p>
+
+<div class="card" style="padding: 1.5rem; max-width: 500px; margin: 0 auto 2rem;">
+    <div style="margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">📱 WhatsApp</h2>
+        <p style="font-size: 0.95rem; color: var(--gray-600); margin-bottom: 0.5rem;">Chat with us instantly on WhatsApp. We typically respond within minutes during business hours.</p>
+        <a href="https://wa.me/254700000000?text=Hello%20SokoShamba%2C%20I%20need%20help%20with..." target="_blank" class="btn btn-primary" style="display: inline-block;">Start WhatsApp Chat</a>
+    </div>
+    <div style="margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">✉️ Email</h2>
+        <p style="font-size: 0.95rem; color: var(--gray-600); margin-bottom: 0.5rem;">Send us an email and we'll get back to you within 24 hours.</p>
+        <a href="mailto:support@sokoshamba.co.ke" class="btn" style="background: white; border: 1px solid var(--green-600); color: var(--green-600); display: inline-block;">support@sokoshamba.co.ke</a>
+    </div>
+</div>
+
+<div style="max-width: 600px; margin: 0 auto;">
+    <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--green-900); margin-bottom: 1rem;">Frequently Asked Questions</h2>
+    <div class="card" style="padding: 1rem; margin-bottom: 0.75rem;">
+        <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem;">How do I track my order?</h3>
+        <p style="font-size: 0.9rem; color: var(--gray-600);">After placing an order, log in with your phone number and go to "My Orders". You'll see live status updates from the farmer and courier.</p>
+    </div>
+    <div class="card" style="padding: 1rem; margin-bottom: 0.75rem;">
+        <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem;">What if my order doesn't arrive?</h3>
+        <p style="font-size: 0.9rem; color: var(--gray-600);">If the farmer doesn't confirm within 30 minutes, your order is automatically cancelled and refunded. For other issues, contact us via WhatsApp or email.</p>
+    </div>
+    <div class="card" style="padding: 1rem; margin-bottom: 0.75rem;">
+        <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem;">How do I become a farmer on SokoShamba?</h3>
+        <p style="font-size: 0.9rem; color: var(--gray-600);">Contact us via WhatsApp or email and we'll guide you through the verification process. Once verified, you can start listing your produce.</p>
+    </div>
+    <div class="card" style="padding: 1rem; margin-bottom: 0.75rem;">
+        <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem;">Is my payment secure?</h3>
+        <p style="font-size: 0.9rem; color: var(--gray-600);">Yes. We use M‑Pesa's secure STK Push system. Your money is held safely until your order is delivered. We never store your M‑Pesa PIN.</p>
+    </div>
+</div>
+{% endblock %}

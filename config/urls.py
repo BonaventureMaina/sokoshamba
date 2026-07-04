@@ -6,7 +6,7 @@ from marketplace.views import (
     home, product_list, product_detail,
     cart_detail, add_to_cart, remove_from_cart,
     farmer_products, farmer_product_add, farmer_product_edit,
-    terms, privacy, farmer_profile,
+    terms, privacy, farmer_profile, support,
 )
 from orders.views import (
     checkout, initiate_payment, mpesa_callback,
@@ -46,6 +46,7 @@ urlpatterns = [
     path('review/<int:review_id>/respond/', respond_to_review, name='respond_to_review'),
     path('terms/', terms, name='terms'),
     path('privacy/', privacy, name='privacy'),
+    path('support/', support, name='support'),
 ]
 
 if settings.DEBUG:

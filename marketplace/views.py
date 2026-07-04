@@ -208,7 +208,13 @@ def farmer_products(request):
     farmer = get_verified_farmer(request.user)
     if not farmer:
         return HttpResponseForbidden("Access denied.")
-    products = farmer.products.all()
+    products_list = farmer.products.all().order_by('-created_at')
+    paginator = Paginator(products_list, 20)
+    page_number = request.GET.get('page', 1)
+    try:
+        products = paginator.page(page_number)
+    except (PageNotAnInteger, EmptyPage):
+        products = paginator.page(1)
     return render(request, 'farmer_products.html', {'products': products, 'farmer': farmer})
 
 
@@ -359,3 +365,6 @@ def terms(request):
 
 def privacy(request):
     return render(request, 'privacy.html')
+
+def support(request):
+    return render(request, 'support.html')

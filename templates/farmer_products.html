@@ -38,11 +38,30 @@
                 </div>
             </div>
         </a>
-        <!-- Edit button sits on top of the card, positioned at bottom right -->
         <a href="/farmer/products/edit/{{ product.id }}/" class="btn btn-primary" style="position: absolute; bottom: 0.75rem; right: 0.75rem; padding: 0.4rem 0.8rem; font-size: 0.85rem; z-index: 2;">Edit</a>
     </div>
     {% endfor %}
 </div>
+
+<!-- Pagination -->
+{% if products.has_other_pages %}
+<div style="text-align: center; margin-top: 2rem;">
+    <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: white; padding: 0.5rem 1.5rem; border-radius: 2rem; box-shadow: var(--shadow-sm);">
+        {% if products.has_previous %}
+        <a href="?page={{ products.previous_page_number }}" style="display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 50%; text-decoration: none; color: var(--green-800); font-weight: 700; font-size: 1.2rem;">‹</a>
+        {% else %}
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 50%; color: var(--gray-400); font-size: 1.2rem;">‹</span>
+        {% endif %}
+        <span style="font-size: 0.9rem; color: var(--gray-600); padding: 0 0.25rem;">Page {{ products.number }} of {{ products.paginator.num_pages }}</span>
+        {% if products.has_next %}
+        <a href="?page={{ products.next_page_number }}" style="display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 50%; text-decoration: none; color: var(--green-800); font-weight: 700; font-size: 1.2rem;">›</a>
+        {% else %}
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 50%; color: var(--gray-400); font-size: 1.2rem;">›</span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 {% else %}
 <div class="empty-state">
     <div class="emoji">🥕</div>
