@@ -1,7 +1,35 @@
 {% extends 'base.html' %}
+{% load phone_format %}
 
 {% block content %}
 <!-- Hero Section -->
+{% if user.is_authenticated and user.role == 'consumer' %}
+<div style="text-align: center; padding: 3rem 1rem 2rem;">
+    <div style="font-size: 3rem; margin-bottom: 0.75rem;">👋</div>
+    <h1 style="font-size: 2rem; font-weight: 800; color: var(--green-900); margin-bottom: 0.5rem;">
+        Hello, {{ consumer_name }}!
+    </h1>
+    <p style="font-size: 1.1rem; color: var(--gray-600); max-width: 500px; margin: 0 auto 1.5rem;">
+        Ready for your next farm‑fresh order?
+    </p>
+    <a href="/products/" class="btn btn-cta" style="font-size: 1.1rem; padding: 0.85rem 2rem;">
+        Browse Fresh Produce
+    </a>
+    <!-- Quick Access -->
+    <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap;">
+        {% if cart_count %}
+        <a href="/cart/" class="btn" style="background: white; border: 1px solid var(--green-600); color: var(--green-600); font-size: 0.9rem; padding: 0.5rem 1rem; text-decoration: none; border-radius: var(--radius-sm);">
+            🛒 You have {{ cart_count }} item(s) in your cart
+        </a>
+        {% endif %}
+        {% if last_order %}
+        <a href="/orders/{{ last_order.id }}/" class="btn" style="background: white; border: 1px solid var(--green-600); color: var(--green-600); font-size: 0.9rem; padding: 0.5rem 1rem; text-decoration: none; border-radius: var(--radius-sm);">
+            📦 Your last order ({{ last_order.reference_number|default:"#"|display_ref }}) is {{ last_order.get_status_display }}
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% else %}
 <div style="text-align: center; padding: 3rem 1rem 2rem;">
     <div style="font-size: 3.5rem; margin-bottom: 1rem;">🥬</div>
     <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--green-900); margin-bottom: 0.75rem; line-height: 1.2;">
@@ -14,6 +42,7 @@
         Browse Fresh Produce
     </a>
 </div>
+{% endif %}
 
 <!-- How It Works -->
 <div style="max-width: 800px; margin: 0 auto 2rem; padding: 0 1rem;">
@@ -89,6 +118,7 @@
     </div>
 </div>
 
+{% if not user.is_authenticated %}
 <!-- Farmer Call‑to‑Action -->
 <div style="text-align: center; padding: 2rem 1rem; background: var(--green-100); border-radius: var(--radius-md); max-width: 600px; margin: 0 auto 2rem;">
     <div style="font-size: 2rem; margin-bottom: 0.5rem;">🧑‍🌾</div>
@@ -98,4 +128,5 @@
     </p>
     <a href="/login/" class="btn btn-primary" style="font-size: 1rem; padding: 0.75rem 1.5rem;">Login as Farmer</a>
 </div>
+{% endif %}
 {% endblock %}

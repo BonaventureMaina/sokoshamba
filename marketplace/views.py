@@ -39,7 +39,21 @@ def home(request):
         farmer__is_active=True,
         farmer__verification_status='verified'
     ).select_related('farmer').prefetch_related('images').order_by('-created_at')[:6]
-    return render(request, 'home.html', {'featured_products': featured})
+
+    context = {'featured_products': featured}
+    if request.user.is_authenticated and request.user.role == 'consumer':
+        try:
+            profile = request.user.consumer_profile
+            context['consumer_name'] = profile.name or 'Shopper'
+        except Exception:
+            context['consumer_name'] = 'Shopper'
+        cart = getattr(request.user, 'cart', None)
+        if cart:
+            context['cart_count'] = cart.items.count()
+        last_order = request.user.orders.order_by('-created_at').first()
+        if last_order:
+            context['last_order'] = last_order
+    return render(request, 'home.html', context)
 
 
 def product_list(request):
