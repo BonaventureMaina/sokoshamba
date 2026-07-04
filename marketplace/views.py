@@ -6,15 +6,15 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.db.models import Avg
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from .models import Category, Product, ProductImage, Cart, CartItem, PendingCheckout
+from accounts.models import FarmerProfile
 from reviews.models import Review
 
 
 def validate_product_image(image):
-    # Check file size (max 5 MB)
     if image.size > 5 * 1024 * 1024:
         raise ValidationError('Image file too large (max 5 MB).')
-    # Check that it's actually an image
     try:
         img = Image.open(image)
         img.verify()
@@ -34,12 +34,19 @@ def get_verified_farmer(user):
 
 
 def home(request):
-    return render(request, 'home.html')
+    featured = Product.objects.filter(
+        is_active=True,
+        farmer__is_active=True,
+        farmer__verification_status='verified'
+    ).select_related('farmer').prefetch_related('images').order_by('-created_at')[:6]
+    return render(request, 'home.html', {'featured_products': featured})
 
 
 def product_list(request):
     categories = Category.objects.filter(is_active=True)
     category_id = request.GET.get('category')
+    page_number = request.GET.get('page', 1)
+
     products = Product.objects.filter(
         is_active=True,
         farmer__is_active=True,
@@ -49,7 +56,15 @@ def product_list(request):
         products = products.filter(category_id=category_id)
     products = products.annotate(avg_rating=Avg('farmer__reviews__rating'))
 
-    for product in products:
+    # Paginate: 20 products per page
+    paginator = Paginator(products, 20)
+    try:
+        products_page = paginator.page(page_number)
+    except (PageNotAnInteger, EmptyPage):
+        products_page = paginator.page(1)
+
+    # Pre-compute star display for the current page only
+    for product in products_page:
         avg = product.avg_rating
         if avg and avg > 0:
             filled = int(round(avg))
@@ -59,7 +74,7 @@ def product_list(request):
 
     context = {
         'categories': categories,
-        'products': products,
+        'products': products_page,
         'active_category': int(category_id) if category_id else None,
     }
     return render(request, 'product_list.html', context)
@@ -107,12 +122,10 @@ def add_to_cart(request):
     except (ValueError, TypeError):
         return JsonResponse({'success': False, 'message': 'Invalid quantity.'}, status=400)
 
-    # If item_id is provided, update quantity on existing cart item directly
     item_id = request.POST.get('item_id')
     if item_id:
         cart = get_or_create_cart(request)
         cart_item = get_object_or_404(CartItem, id=item_id, cart=cart)
-        # Enforce single-farmer check
         existing_items = cart.items.exclude(id=item_id).select_related('product__farmer').first()
         if existing_items and existing_items.product.farmer_id != cart_item.product.farmer_id:
             return JsonResponse({
@@ -144,7 +157,7 @@ def add_to_cart(request):
             'success': False,
             'message': (
                 'Your cart has items from ' + existing_items.product.farmer.farm_name + '. '
-                'Each farmer’s products are delivered separately to keep them fresh. '
+                'Each farmer\u2019s products are delivered separately to keep them fresh. '
                 'Please complete that order or clear your cart before adding from ' + product.farmer.farm_name + '.'
             ),
         }, status=409)
@@ -248,7 +261,6 @@ def farmer_product_add(request):
             except Category.DoesNotExist:
                 pass
 
-        # Handle uploaded image
         image_file = request.FILES.get('image')
         if image_file:
             validate_product_image(image_file)
@@ -316,7 +328,6 @@ def farmer_product_edit(request, product_id):
             product.category = None
         product.save()
 
-        # Handle uploaded image
         image_file = request.FILES.get('image')
         if image_file:
             validate_product_image(image_file)
@@ -331,6 +342,15 @@ def farmer_product_edit(request, product_id):
         'farmer': farmer,
         'product': product,
     })
+
+
+def farmer_profile(request, farmer_id):
+    farmer = get_object_or_404(FarmerProfile, id=farmer_id, verification_status='verified', is_active=True)
+    products = Product.objects.filter(
+        farmer=farmer,
+        is_active=True
+    ).select_related('farmer__user').prefetch_related('images').order_by('-created_at')
+    return render(request, 'farmer_public_profile.html', {'farmer': farmer, 'products': products})
 
 
 def terms(request):

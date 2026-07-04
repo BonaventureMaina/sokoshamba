@@ -6,7 +6,7 @@ from marketplace.views import (
     home, product_list, product_detail,
     cart_detail, add_to_cart, remove_from_cart,
     farmer_products, farmer_product_add, farmer_product_edit,
-    terms, privacy,
+    terms, privacy, farmer_profile,
 )
 from orders.views import (
     checkout, initiate_payment, mpesa_callback,
@@ -22,6 +22,7 @@ urlpatterns = [
     path('', home, name='home'),
     path('products/', product_list, name='product_list'),
     path('product/<int:product_id>/', product_detail, name='product_detail'),
+    path('farmer/<int:farmer_id>/', farmer_profile, name='farmer_profile'),
     path('cart/', cart_detail, name='cart'),
     path('cart/add/', add_to_cart, name='add_to_cart'),
     path('cart/remove/', remove_from_cart, name='remove_from_cart'),

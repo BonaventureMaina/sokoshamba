@@ -2,21 +2,43 @@
 
 {% block content %}
 <!-- Hero Section -->
-<section style="text-align: center; padding: 3rem 1rem 2.5rem;">
+<div style="text-align: center; padding: 3rem 1rem 2rem;">
     <div style="font-size: 3.5rem; margin-bottom: 1rem;">🥬</div>
-    <h1 style="font-size: 2rem; font-weight: 800; color: var(--green-900); margin-bottom: 0.5rem; letter-spacing: -0.5px;">
-        Farm Fresh, Direct to You
+    <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--green-900); margin-bottom: 0.75rem; line-height: 1.2;">
+        Kenya's Freshest Farm‑to‑Table Marketplace
     </h1>
-    <p style="font-size: 1.1rem; color: var(--gray-600); max-width: 500px; margin: 0 auto 1.5rem; line-height: 1.6;">
-        Kenya's freshest produce — delivered from verified farmers straight to your door. No middlemen, just fair prices and full traceability.
+    <p style="font-size: 1.1rem; color: var(--gray-600); max-width: 600px; margin: 0 auto 1.5rem; line-height: 1.6;">
+        Order fresh produce directly from verified farmers. Delivered to your door with full traceability and a 30‑minute refund guarantee.
     </p>
     <a href="/products/" class="btn btn-cta" style="font-size: 1.1rem; padding: 0.85rem 2rem;">
         Browse Fresh Produce
     </a>
-</section>
+</div>
 
-<!-- Trust Strip -->
-<div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; margin-bottom: 2rem; padding: 1.5rem 1rem; background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+<!-- How It Works -->
+<div style="max-width: 800px; margin: 0 auto 2rem; padding: 0 1rem;">
+    <h2 style="text-align: center; font-size: 1.5rem; font-weight: 700; color: var(--green-900); margin-bottom: 1.5rem;">How It Works</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+        <div class="card" style="padding: 1.5rem; text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">🔍</div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">1. Browse</h3>
+            <p style="font-size: 0.9rem; color: var(--gray-600);">Explore fresh produce from verified farms near you.</p>
+        </div>
+        <div class="card" style="padding: 1.5rem; text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">📱</div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">2. Order</h3>
+            <p style="font-size: 0.9rem; color: var(--gray-600);">Pay securely with M‑Pesa. Money is held until you receive your order.</p>
+        </div>
+        <div class="card" style="padding: 1.5rem; text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">🚀</div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">3. Receive</h3>
+            <p style="font-size: 0.9rem; color: var(--gray-600);">Doorstep delivery with real‑time tracking.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Trust & Social Proof Strip -->
+<div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; margin-bottom: 2rem; padding: 1.5rem 1rem; background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); max-width: 800px; margin-left: auto; margin-right: auto;">
     <div style="text-align: center;">
         <div style="font-size: 1.5rem;">🧑‍🌾</div>
         <p style="font-weight: 600; font-size: 0.9rem; color: var(--charcoal);">Verified Farmers</p>
@@ -34,17 +56,46 @@
     </div>
     <div style="text-align: center;">
         <div style="font-size: 1.5rem;">🛡️</div>
-        <p style="font-weight: 600; font-size: 0.9rem; color: var(--charcoal);">Auto-Refund</p>
-        <p style="font-size: 0.75rem; color: var(--gray-600);">30-minute guarantee or your money back</p>
+        <p style="font-weight: 600; font-size: 0.9rem; color: var(--charcoal);">Auto‑Refund</p>
+        <p style="font-size: 0.75rem; color: var(--gray-600);">30‑minute guarantee or your money back</p>
     </div>
 </div>
 
-<!-- Featured Section -->
-<div style="margin-bottom: 1rem;">
-    <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--green-900); margin-bottom: 0.25rem;">Today's Picks</h2>
-    <p style="color: var(--gray-600); font-size: 0.9rem;">Fresh from the farm, ready for your table</p>
+<!-- Featured Products -->
+<div style="max-width: 960px; margin: 0 auto 2rem; padding: 0 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--green-900);">Fresh Picks</h2>
+        <a href="/products/" style="color: var(--green-600); font-size: 0.9rem; font-weight: 600; text-decoration: none;">View All →</a>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+        {% for product in featured_products %}
+        <a href="/product/{{ product.id }}/" style="text-decoration: none; color: inherit;">
+            <div class="card" style="overflow: hidden;">
+                <div style="aspect-ratio: 4/3; background: linear-gradient(135deg, var(--green-100), #e8f5e9); display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                    {% if product.images.first %}
+                    <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                    🥬
+                    {% endif %}
+                </div>
+                <div style="padding: 0.75rem;">
+                    <h3 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.25rem;">{{ product.name }}</h3>
+                    <p style="font-size: 0.8rem; color: var(--gray-600); margin-bottom: 0.25rem;">{{ product.farmer.farm_name }}</p>
+                    <p style="font-weight: 800; color: var(--green-800);">KSh {{ product.price }} / {{ product.unit }}</p>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
 </div>
-<div style="text-align: center; padding: 2rem;">
-    <a href="/products/" class="btn btn-primary" style="font-size: 1rem; padding: 0.75rem 1.5rem;">View All Products →</a>
+
+<!-- Farmer Call‑to‑Action -->
+<div style="text-align: center; padding: 2rem 1rem; background: var(--green-100); border-radius: var(--radius-md); max-width: 600px; margin: 0 auto 2rem;">
+    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🧑‍🌾</div>
+    <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--green-900); margin-bottom: 0.5rem;">Are you a farmer?</h2>
+    <p style="color: var(--gray-600); margin-bottom: 1rem; font-size: 0.95rem;">
+        Sell directly to consumers, keep 85% of every sale, and get paid instantly via M‑Pesa.
+    </p>
+    <a href="/login/" class="btn btn-primary" style="font-size: 1rem; padding: 0.75rem 1.5rem;">Login as Farmer</a>
 </div>
 {% endblock %}
