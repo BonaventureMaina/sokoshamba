@@ -246,6 +246,10 @@ def mpesa_callback(request):
     cart.items.all().delete()
     PendingCheckout.objects.filter(checkout_request_id=checkout_request_id).delete()
 
+    # Notify farmer via console in sandbox
+    if os.environ.get('MPESA_ENVIRONMENT', 'sandbox') == 'sandbox':
+        print(f"\n>>> NEW ORDER {order.reference_number} for farmer {order.farmer.user.phone}\n")
+
     return JsonResponse({
         'success': True,
         'order_id': order.id,
