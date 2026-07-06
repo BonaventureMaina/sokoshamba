@@ -61,6 +61,9 @@
         {% endif %}
         <button onclick="reorder({{ order.id }})" class="btn btn-primary" style="display: inline-block; margin-top: 0.75rem;">🛒 Buy Again</button>
     {% endif %}
+{% if order.status in 'pending,confirmed,preparing,ready_for_pickup,pickup_requested,courier_assigned,in_transit' %}
+<p style="text-align: center; font-size: 0.85rem; color: var(--gray-600); margin-top: 0.75rem;">Estimated delivery: 2–4 hours</p>
+{% endif %}
 </div>
 
 <!-- Delivery Address -->
