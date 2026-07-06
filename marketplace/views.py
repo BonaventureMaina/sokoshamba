@@ -9,6 +9,8 @@ from django.db.models import Avg
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from .models import Category, Product, ProductImage, Cart, CartItem, PendingCheckout
 from accounts.models import FarmerProfile
+from accounts.views import get_verified_farmer, get_farmer
+from accounts.views import get_verified_farmer, get_farmer
 from reviews.models import Review
 
 
@@ -219,7 +221,7 @@ def cart_detail(request):
 
 @login_required
 def farmer_products(request):
-    farmer = get_verified_farmer(request.user)
+    farmer = get_farmer(request.user)
     if not farmer:
         return HttpResponseForbidden("Access denied.")
     products_list = farmer.products.all().order_by('-created_at')
@@ -366,10 +368,18 @@ def farmer_product_edit(request, product_id):
 
 def farmer_profile(request, farmer_id):
     farmer = get_object_or_404(FarmerProfile, id=farmer_id, verification_status='verified', is_active=True)
-    products = Product.objects.filter(
+    products_list = Product.objects.filter(
         farmer=farmer,
         is_active=True
     ).select_related('farmer__user').prefetch_related('images').order_by('-created_at')
+
+    paginator = Paginator(products_list, 20)
+    page_number = request.GET.get('page', 1)
+    try:
+        products = paginator.page(page_number)
+    except (PageNotAnInteger, EmptyPage):
+        products = paginator.page(1)
+
     return render(request, 'farmer_public_profile.html', {'farmer': farmer, 'products': products})
 
 

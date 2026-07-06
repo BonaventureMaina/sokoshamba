@@ -1,3 +1,4 @@
+from accounts.views import get_verified_farmer, get_farmer
 from datetime import timedelta
 import os
 from django.shortcuts import render, redirect, get_object_or_404
@@ -268,7 +269,7 @@ def order_detail(request, order_id):
 
 @login_required
 def farmer_order_list(request):
-    farmer = get_verified_farmer(request.user)
+    farmer = get_farmer(request.user)
     if not farmer:
         return HttpResponseForbidden("Access denied.")
 

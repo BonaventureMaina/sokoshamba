@@ -3,6 +3,12 @@
 
 {% block content %}
 <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">My Orders</h1>
+{% if farmer.verification_status == 'pending' %}
+<div class="card" style="padding: 1rem; margin-bottom: 1rem; background: #fff3cd; border-left: 4px solid #ffc107; text-align: center;">
+    <p style="font-weight: 700; color: #856404; margin-bottom: 0.25rem;">⏳ Your farm is pending verification.</p>
+    <p style="font-size: 0.9rem; color: #856404;">We'll call you soon to verify your details. You'll be able to list products once verified.</p>
+</div>
+{% endif %}
 <p style="color: var(--slate-gray); margin-bottom: 1.5rem;">Manage incoming orders from consumers</p>
 
 {% if orders %}

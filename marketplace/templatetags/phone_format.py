@@ -7,7 +7,6 @@ def normalize_phone(value):
     """Convert any Kenyan phone input to +254XXXXXXXXX."""
     if not value:
         return value
-    # Remove all non-digit characters
     digits = re.sub(r'\D', '', value)
     if len(digits) == 9 and digits.startswith('7'):
         return f'+254{digits}'
@@ -15,15 +14,18 @@ def normalize_phone(value):
         return f'+254{digits[1:]}'
     elif len(digits) == 12 and digits.startswith('254'):
         return f'+{digits}'
-    return value  # already canonical or unknown format
+    return value
 
 @register.filter(name='local_phone')
 def local_phone(value):
     """Display +254XXXXXXXXX as 07XX XXX XXX."""
     if not value or not value.startswith('+254'):
         return value
-    digits = value[4:]  # remove +254
-    return f'07{digits[:2]} {digits[2:5]} {digits[5:]}'
+    digits = value[4:]   # e.g., '712345678'
+    if len(digits) == 9:
+        # digits[0] is '7', digits[1:3] is the operator code
+        return f'07{digits[1:3]} {digits[3:6]} {digits[6:]}'
+    return value
 
 @register.filter(name='mask_phone')
 def mask_phone(value):
@@ -43,4 +45,4 @@ def display_ref(value):
     parts = value.split('-')
     if len(parts) >= 3:
         return f'SK-{parts[2]}'
-    return value  # fallback
+    return value

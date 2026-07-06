@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="page-title">Register as a Farmer</h1>
+<p class="page-subtitle">Join SokoShamba and sell your produce directly to consumers.</p>
+
+<div class="card" style="padding: 1.5rem; max-width: 500px; margin: 0 auto;">
+    {% if error %}
+    <div class="error-msg">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="input-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone" placeholder="e.g. 0712345678" value="{{ phone|default:"" }}" required>
+        </div>
+
+        <div class="input-group">
+            <label for="farm_name">Farm Name</label>
+            <input type="text" id="farm_name" name="farm_name" value="{{ farm_name|default:"" }}" placeholder="Your farm name" required>
+        </div>
+
+        <div class="input-group">
+            <label for="county">County</label>
+            <input type="text" id="county" name="county" value="{{ county|default:"" }}" placeholder="e.g. Kiambu" required>
+        </div>
+
+        <div class="input-group">
+            <label for="sub_county">Sub‑County (optional)</label>
+            <input type="text" id="sub_county" name="sub_county" value="{{ sub_county|default:"" }}" placeholder="e.g. Ruiru">
+        </div>
+
+        <div class="input-group">
+            <label for="bio">Bio (optional)</label>
+            <textarea id="bio" name="bio" rows="3" placeholder="Tell customers about your farm">{{ bio|default:"" }}</textarea>
+        </div>
+
+        <div class="input-group">
+            <label for="photo">Profile Photo (optional)</label>
+            <input type="file" id="photo" name="photo" accept="image/*" style="padding: 0.5rem;">
+            <p style="font-size: 0.8rem; color: var(--gray-600); margin-top: 0.25rem;">JPEG or PNG recommended</p>
+        </div>
+
+        <p style="font-size: 0.85rem; color: var(--gray-600); margin-bottom: 1rem;">
+            By registering, you agree to our <a href="/terms/" target="_blank">Terms of Service</a> and <a href="/privacy/" target="_blank">Privacy Policy</a>.
+        </p>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Register & Verify Phone</button>
+    </form>
+</div>
+{% endblock %}

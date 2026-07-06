@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from .models import User, OtpCode, ConsumerProfile
+from .models import User, OtpCode, ConsumerProfile, FarmerProfile
 from marketplace.templatetags.phone_format import normalize_phone
 
 
@@ -107,14 +107,21 @@ def logout_view(request):
     return redirect('home')
 
 
-def get_verified_farmer(user):
+def get_farmer(user):
+    """Return farmer profile if user is a farmer (any verification status)."""
     if user.is_authenticated and user.role == 'farmer':
         try:
-            profile = user.farmer_profile
-            if profile.verification_status == 'verified' and profile.is_active:
-                return profile
+            return user.farmer_profile
         except Exception:
             pass
+    return None
+
+
+def get_verified_farmer(user):
+    """Return farmer profile only if verified and active."""
+    farmer = get_farmer(user)
+    if farmer and farmer.verification_status == 'verified' and farmer.is_active:
+        return farmer
     return None
 
 
@@ -179,3 +186,69 @@ def farmer_profile(request):
         return redirect('farmer_profile')
 
     return render(request, 'farmer_profile.html', {'farmer': farmer})
+
+def register_farmer(request):
+    if request.method == 'POST':
+        phone = normalize_phone(request.POST.get('phone', '').strip())
+        farm_name = request.POST.get('farm_name', '').strip()
+        county = request.POST.get('county', '').strip()
+        sub_county = request.POST.get('sub_county', '').strip()
+        bio = request.POST.get('bio', '').strip()
+
+        if not phone or not farm_name or not county:
+            return render(request, 'register_farmer.html', {
+                'error': 'Phone, farm name, and county are required.',
+                'phone': phone, 'farm_name': farm_name, 'county': county,
+                'sub_county': sub_county, 'bio': bio,
+            })
+
+        # Check if phone already exists
+        if User.objects.filter(phone=phone).exists():
+            return render(request, 'register_farmer.html', {
+                'error': 'A user with that phone number already exists.',
+                'phone': phone, 'farm_name': farm_name, 'county': county,
+                'sub_county': sub_county, 'bio': bio,
+            })
+
+        # Create user
+        user = User.objects.create_user(phone=phone, role='farmer', phone_verified=False)
+        user.set_unusable_password()
+        user.save()
+
+        # Create farmer profile (pending)
+        FarmerProfile.objects.create(
+            user=user,
+            farm_name=farm_name,
+            county=county,
+            sub_county=sub_county,
+            bio=bio,
+            verification_status='pending',
+            is_active=True,
+        )
+
+        # Handle photo upload
+        if 'photo' in request.FILES:
+            profile = user.farmer_profile
+            profile.photo_url = request.FILES['photo']
+            profile.save()
+
+        # Generate and send OTP (same as login)
+        import random
+        code = str(random.randint(100000, 999999))
+        OtpCode.objects.filter(user=user).delete()
+        expires_at = timezone.now() + timezone.timedelta(minutes=5)
+        OtpCode.objects.create(user=user, code=code, expires_at=expires_at)
+
+        if os.environ.get('MPESA_ENVIRONMENT', 'sandbox') == 'sandbox':
+            print(f"\n>>> OTP for {phone}: {code}\n")
+        else:
+            try:
+                from notifications.sms_service import send_sms
+                send_sms(phone, f'Your SokoShamba OTP code is: {code}')
+            except Exception as e:
+                print(f'SMS failed for {phone}: {e}. OTP code is: {code}')
+
+        request.session['login_phone'] = phone
+        return redirect('otp_verify')
+
+    return render(request, 'register_farmer.html')

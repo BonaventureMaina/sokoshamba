@@ -23,7 +23,7 @@
 <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--green-900); margin-bottom: 1rem;">Products from {{ farmer.farm_name }}</h2>
 
 {% if products %}
-<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem;">
     {% for product in products %}
     <a href="/product/{{ product.id }}/" style="text-decoration: none; color: inherit;">
         <div class="card" style="overflow: hidden; display: flex; flex-direction: column; height: 100%;">
@@ -57,4 +57,23 @@
     <p>This farmer hasn't listed any products yet.</p>
 </div>
 {% endif %}
+
+{% if products.has_other_pages %}
+<div style="text-align: center; margin-top: 2rem;">
+    <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: white; padding: 0.5rem 1.5rem; border-radius: 2rem; box-shadow: var(--shadow-sm);">
+        {% if products.has_previous %}
+        <a href="?page={{ products.previous_page_number }}" style="display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 50%; text-decoration: none; color: var(--green-800); font-weight: 700; font-size: 1.2rem;">‹</a>
+        {% else %}
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 50%; color: var(--gray-400); font-size: 1.2rem;">‹</span>
+        {% endif %}
+        <span style="font-size: 0.9rem; color: var(--gray-600); padding: 0 0.25rem;">Page {{ products.number }} of {{ products.paginator.num_pages }}</span>
+        {% if products.has_next %}
+        <a href="?page={{ products.next_page_number }}" style="display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 50%; text-decoration: none; color: var(--green-800); font-weight: 700; font-size: 1.2rem;">›</a>
+        {% else %}
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 50%; color: var(--gray-400); font-size: 1.2rem;">›</span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}
