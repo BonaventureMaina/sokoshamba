@@ -24,3 +24,6 @@ Thumbs.db
 
 # Prisma
 prisma/migrations/
+__pycache__/
+*.pyc
+cron.log
